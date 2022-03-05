@@ -14,22 +14,22 @@ class UserDomain():
         request.SK= f''
         return self.__repository.join_user(request.dict())
 
-    def update_user(self, PK: str):
+    def update_user(self, id: str):
         PK= f''
         SK= f''
         return self.__repository.update_user(PK, SK)
 
-    def delete_user(self, PK: str):
+    def delete_user(self, id: str):
         PK= f''
         SK= f''
         return self.__repository.delete_user(PK, SK)
 
-    def get_user(self, PK: str):
+    def get_user(self, id: str):
         PK= f''
         SK= f''
         return self.__repository.get_user(PK, SK)
 
-    def update_nutrients(self, PK: str):
+    def update_nutrients(self, id: str):
         PK= f''
         SK= f''
         return self.__repository.update_nutrients(PK, SK)
