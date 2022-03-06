@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app_v2.domain.domain import UserDomain, UserLog
+from app_v2.domain.domain import UserDomain, LogDomain, UserJoinModel, physique
 
 class UserRouter:
     def __init__(self, domain: UserDomain):
@@ -18,21 +18,21 @@ class UserRouter:
         def join_user(request: UserJoinModel):
             return self.__domain.join_user(request)
 
-        @api_router.put('/update/{PK}')
-        def update_user(PK: str):
-            return self.__domain.update_user(PK)
+        @api_router.put('/update/{userid}')
+        def update_user_physique(userid: str, physique: physique):
+            return self.__domain.update_user_physique(userid, physique)
 
-        @api_router.delete('/delete/{PK}')
-        def delete_user(PK: str):
-            return self.__domain.delete_user(PK)
+        @api_router.delete('/delete/{userid}')
+        def delete_user(userid: str):
+            return self.__domain.delete_user(userid)
 
-        @api_router.get('/info/{PK}')
-        def get_user(PK):
-            return self.__domain.get_user(PK)
+        @api_router.get('/info/{userid}')
+        def get_user(userid):
+            return self.__domain.get_user(userid)
         
-        @api_router.put('/update/nutrients/{PK}')
-        def update_nutrients(PK):
-            return self.__domain.update_nutrients(PK)
+        @api_router.put('/update/nutrients/{userid}')
+        def update_user_nutr_suppl(userid):
+            return self.__domain.update_user_nutr_suppl(userid)
 
         
 class LogRouter:

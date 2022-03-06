@@ -65,7 +65,7 @@ class UserRepository:
         return response.get('Attributes')
 
     # nutr_suppl 수정
-    # input: userid, nutr_suppl
+    # input: userid, nutr_suppl -> 이해 안 감
     # output: nutr_suppl
     def update_user_nutr_suppl(self, userid:str, nutrsuppl:list) -> list:
         response = self.__table.update_item(
@@ -110,7 +110,7 @@ class UserRepository:
         )
         return response.get('Item').get('physique')
 
-    # RDI 정보 받기
+    # RDI 정보 받기 -> 이것만 보여줘야하는 이유가 뭔가요? get_user에서 확인 가능하잖아요.
     # input: userid
     # output: RDI value
     def get_user_RDI(self, userid:str) -> dict:
