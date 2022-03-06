@@ -33,6 +33,9 @@ class UserDomain():
     def update_user_nutr_suppl(self, userid: str):
 
         return self.__repository.update_user_nutr_suppl(userid)
+    
+    def get_user_RDI(self, userid: str):
+        return self.__repository.get_user_RDI(userid)
         
 class LogDomain():
     def __init__(self, repository: LogRepository):

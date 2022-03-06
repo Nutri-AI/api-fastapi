@@ -33,6 +33,10 @@ class UserRouter:
         @api_router.put('/update/nutrients/{userid}')
         def update_user_nutr_suppl(userid):
             return self.__domain.update_user_nutr_suppl(userid)
+        
+        @api_router.get('/get/RDI/{userid}')
+        def get_user_RDI(self, userid: str):
+            return self.__domain.get_user_RDI(userid)
 
         
 class LogRouter:
