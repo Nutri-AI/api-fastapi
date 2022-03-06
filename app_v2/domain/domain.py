@@ -1,16 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from decimal import Decimal
 from app_v2.repository.repository import UserRepository, LogRepository
 
 class UserJoinModel(BaseModel):
-    userid: str
+    userid: str= Field(example= '@email')
     physique: physique
 class physique(BaseModel):
-    birth: str
-    sex: str
-    height: Decimal
-    weight: Decimal
-    PAI: Decimal
+    birth: str= Field(example= 'yyyy-mm-dd')
+    sex: str= Field(example= 'f or m')
+    height: Decimal= Field(example= 'allow decimal point with (""), ex) "177.2"')
+    weight: Decimal= Field(example= 'allow decimal point with (""), ex) "67.7"')
+    PAI: Decimal= Field(example= 'allow decimal point with (""), ex) "1.2"')
 class UserDomain():
     def __init__(self, repository: UserRepository):
         self.__repository= repository

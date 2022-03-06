@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from signal import raise_signal
+from turtle import st
+from fastapi import APIRouter, HTTPException, status
 
 from app_v2.domain.domain import UserDomain, LogDomain, UserJoinModel, physique
 
@@ -16,7 +18,10 @@ class UserRouter:
 
         @api_router.post('/join')
         def join_user(request: UserJoinModel):
-            return self.__domain.join_user(request)
+            try:
+                return self.__domain.join_user(request)
+            except:
+                raise HTTPException(status_code= status.HTTP_406_NOT_ACCEPTABLE, detail= 'Please enter the appropriate format for the item')
 
         @api_router.put('/update/{userid}')
         def update_user_physique(userid: str, physique: physique):
@@ -28,7 +33,10 @@ class UserRouter:
 
         @api_router.get('/info/{userid}')
         def get_user(userid):
-            return self.__domain.get_user(userid)
+            try:
+                return self.__domain.get_user(userid)
+            except:
+                raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail= 'No exist userid')
         
         @api_router.put('/update/nutrients/{userid}')
         def update_user_nutr_suppl(userid):
