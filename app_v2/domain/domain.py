@@ -36,6 +36,7 @@ class UserDomain():
     
     def get_user_RDI(self, userid: str):
         return self.__repository.get_user_RDI(userid)
+
         
 class LogDomain():
     def __init__(self, repository: LogRepository):

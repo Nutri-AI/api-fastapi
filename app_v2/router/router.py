@@ -2,6 +2,7 @@ from signal import raise_signal
 from turtle import st
 from fastapi import APIRouter, HTTPException, status
 
+
 from app_v2.domain.domain import UserDomain, LogDomain, UserJoinModel, physique
 
 class UserRouter:
