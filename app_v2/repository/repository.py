@@ -50,7 +50,7 @@ class UserRepository:
                 'SK': SK
             }
         )
-        return response.get('Item')
+        return response.get('Item').get('rdi')
     
 
     # user 가입
