@@ -179,12 +179,12 @@ class UserRepository:
     # input: search word
     # output: [{'prod_name': ...}, {}, .. ]
     ####################3
-    def get_nutr_suppls(self, search:str) -> list:
-        response = self.__table.query(
-            KeyConditionExpression=Key('PK').eq('NUTRSUPPL'),
-            FilterExpression=Attr('prod_name').contains(search),
-        )
-        return response.get('Items')
+    # def get_nutr_suppls(self, search:str) -> list:
+    #     response = self.__table.query(
+    #         KeyConditionExpression=Key('PK').eq('NUTRSUPPL'),
+    #         FilterExpression=Attr('prod_name').contains(search),
+    #     )
+    #     return response.get('Items')
 
 
     # user 삭제
