@@ -2,6 +2,8 @@ from urllib import response
 from boto3.resources.base import ServiceResource
 from boto3.dynamodb.conditions import Key, Attr
 
+from datetime import date
+
 ###
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
@@ -9,11 +11,48 @@ class UserRepository:
         self.__table = db.Table('NutriAI')
 
     # calculate RDI
-    #####################
-    def __calculate_RDI(physique:dict) -> dict:
+    def __calculate_RDI(self, physique:dict) -> dict:
+        today = date.today()
+        cal_age = lambda birth : today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+        age = cal_age(physique.birth)
+        if age == 0:
+            PK = 'RDI#0'
+        elif age in range(1,3):
+            PK = 'RDI#1-2'
+        elif age in range(3,6):
+            PK = 'RDI#3-5'
+        elif age in range(6,9):
+            PK = 'RDI#6-8'
+        elif age in range(9,12):
+            PK = 'RDI#9-11'
+        elif age in range(12,15):
+            PK = 'RDI#12-14'
+        elif age in range(15,19):
+            PK = 'RDI#15-18'
+        elif age in range(19,30):
+            PK = 'RDI#19-29'
+        elif age in range(30,50):
+            PK = 'RDI#30-49'
+        elif age in range(50,65):
+            PK = 'RDI#50-64'
+        elif age in range(65,75):
+            PK = 'RDI#65-74'
+        elif age >=75:
+            PK = 'RDI#75-'
+        else:
+            return None
+        
+        SK = f'RDI#{physique.sex}'
 
-        return
+        response = self.__table.get_item(
+            Key={
+                'PK': PK,
+                'SK': SK
+            }
+        )
+        return response.get('Item')
     
+
     # user 가입
     # input: {userid, username, physique{}}
     # output: ??? #############
@@ -65,7 +104,7 @@ class UserRepository:
         return response.get('Attributes')
 
     # nutr_suppl 수정
-    # input: userid, nutr_suppl -> 이해 안 감
+    # input: userid, nutr_suppl(prod_code 만 있는 리스트)
     # output: nutr_suppl
     def update_user_nutr_suppl(self, userid:str, nutrsuppl:list) -> list:
         response = self.__table.update_item(
@@ -110,7 +149,7 @@ class UserRepository:
         )
         return response.get('Item').get('physique')
 
-    # RDI 정보 받기 -> 이것만 보여줘야하는 이유가 뭔가요? get_user에서 확인 가능하잖아요.
+    # RDI 정보 받기
     # input: userid
     # output: RDI value
     def get_user_RDI(self, userid:str) -> dict:
@@ -136,6 +175,17 @@ class UserRepository:
         )
         return response.get('Item').get('nutr_suppl')
 
+    # search nutr_suppl
+    # input: search word
+    # output: [{'prod_name': ...}, {}, .. ]
+    ####################3
+    def get_nutr_suppls(self, search:str) -> list:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq('NUTRSUPPL'),
+            FilterExpression=Attr('prod_name').contains(search),
+        )
+        return response.get('Items')
+
 
     # user 삭제
     # input : userID
@@ -149,6 +199,8 @@ class UserRepository:
             ReturnValues='ALL_OLD'
         )
         return response.get('Attributes').get('username')
+
+
 
 class LogRepository:
     def __init__(self, db: ServiceResource)-> None:
