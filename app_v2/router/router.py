@@ -1,6 +1,4 @@
-from signal import raise_signal
-from turtle import st
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, UploadFile
 
 from app_v2.domain.domain import NutrientsName
 
@@ -57,5 +55,24 @@ class LogRouter:
     @property
     def router(self):
         api_router= APIRouter(prefix= '/log', tags= ['log'])
+
+        # 이미지는 레포에서 s3로 이동?
+        @api_router.put('/upload/image/{userid}')
+        def upload_image(userid: str, image: UploadFile):
+            return self.__domain.upload_image(userid, image)
+
+        @api_router.put('/record/meal/{userid}')
+        def record_meal(userid: str, big: str, small: str):
+            return self.__domain.record_meal(userid, big, small)
+
+        @api_router.post('/analyze/nutri/{userid}')
+        def post_time_nutri(userid: str, request):
+            #request는 임의로 설정한 그냥 하루 영양 섭취 정보입니다.(앱에서 가저오는)
+            return self.__domain.post_time_nutri(userid, request)
+        
+        @api_router.get('/recommend/nutrients/{userid}')
+        def recommend_nutrients(userid: str, request):
+            # request는 부족 영양소?
+            return self.__domain.recommend_nutrients(userid, request)
 
         return api_router

@@ -227,3 +227,24 @@ class UserRepository:
 class LogRepository:
     def __init__(self, db: ServiceResource):
         self.__db= db
+        self.__table= self.__db.Table('NutriAI')
+
+    def upload_image(self, userid: str, image, detail: str):
+        # 대분류 후보?
+        return 
+
+    def record_meal(self, userid: str, big: str, small: str):
+        response= self.__table.get_item()
+        # 영양 정보 가져와서 로그 기록 저장
+        response2= self.__table.update_item()
+        return response2
+
+    def post_time_nutri(self, userid: str, request):
+        #유저 아이디 별 저장, 방식에 따라 수정해주십쇼 그냥 적어봤슴다.
+        response= self.__table.put_item()
+        
+        return response 
+
+    def recommend_nutrients(self, userid: str, request):
+        #부족 영양소로 db 영양제 정보에 어떻게 접근??
+        return

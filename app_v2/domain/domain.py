@@ -50,3 +50,18 @@ class UserDomain():
 class LogDomain():
     def __init__(self, repository: LogRepository):
         self.__repository= repository
+
+    def upload_image(self, userid: str, image):
+        #onnx runtime 추론 -> image, class number 반환
+        #여기서 대분류(detail) 매핑
+        #detail= mapping[int]
+        return self.__repository.upload_image(userid, image)#, detail)
+
+    def record_meal(self, userid: str, big: str, small: str):
+        return self.__repository.record_meal(userid, big, small)
+
+    def post_time_nutri(self, userid: str, request):
+        return self.__repository.post_time_nutri(userid, request)
+
+    def recommend_nutrients(self, userid: str, request):
+        return self.__repository.recommend_nutriendts(userid, request)
