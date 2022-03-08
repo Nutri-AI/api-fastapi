@@ -1,6 +1,6 @@
 from boto3.resources.base import ServiceResource
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 ###
@@ -44,7 +44,7 @@ class UserRepository:
     def __calculate_RDI(self, physique:dict) -> dict:
         today = date.today()
         cal_age = lambda birth : today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
-        age = Decimal(cal_age(physique.birth))
+        age = Decimal(cal_age(date(physique.birth)))
         PK = self.__get_rdi_pk(age)
         SK = f'RDI#{physique.sex}'
 
@@ -220,5 +220,22 @@ class UserRepository:
 
 
 class LogRepository:
-    def __init__(self, db: ServiceResource)-> None:
-        self.__db= db
+    def __init__(self, db: ServiceResource, s3)-> None:
+        self.__db = db
+        self.__table = db.Table('NutriAI')
+        # self.__s3 = s3
+    
+    # meal log 입력
+    def post_meal_log(self, userid:str, image_key:str, food_list:list) -> None:
+        response = self.__table.put_item(
+            Item={
+                'PK': f'USER#{userid}',
+                'SK': f'MEAL#{datetime.now()}',
+                'photo': image_key,
+                'food_list': food_list
+            },
+            ConditionExpression='attribute_not_exists(PK) AND attribute_not_exists(SK)'
+        )
+    
+    # meal log 가져오기
+    def get_meal_log(self, userid:str)
