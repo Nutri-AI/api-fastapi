@@ -1,19 +1,28 @@
 from pydantic import BaseModel, Field
 from decimal import Decimal
+from enum import Enum
+
 from app_v2.repository.repository import UserRepository, LogRepository
 
-class UserJoinModel(BaseModel):
-    userid: str= Field(example= '@email')
-    physique: physique
 class physique(BaseModel):
-    birth: str= Field(example= 'yyyy-mm-dd')
-    sex: str= Field(example= 'f or m')
-    height: Decimal= Field(example= 'allow decimal point with (""), ex) "177.2"')
-    weight: Decimal= Field(example= 'allow decimal point with (""), ex) "67.7"')
-    PAI: Decimal= Field(example= 'allow decimal point with (""), ex) "1.2"')
+    birth: str= Field(...,example= "1995-04-04")
+    sex: str= Field(...,example= "M")
+    height: Decimal= Field(...,example= "177.2")
+    weight: Decimal= Field(...,example= "67.7")
+    PAI: Decimal= Field(...,example= "1.2")
+
+class UserJoinModel(BaseModel):
+    userid: str= Field(...,example= "nutriai@email.com")
+    physique: physique
+
+class NutrientsName(str, Enum):
+    vitamins= ["vitamins"]
+    multivitamin= ["multivitamin"]
+    nothing= None
+
 class UserDomain():
     def __init__(self, repository: UserRepository):
-        self.__repository= repository
+        self.__repository= repository   
 
     def join_user(self, request: dict):
         return self.__repository.join_user(request.dict())
@@ -30,9 +39,9 @@ class UserDomain():
 
         return self.__repository.get_user(userid)
 
-    def update_user_nutr_suppl(self, userid: str):
+    def update_user_nutr_suppl(self, userid: str, nutrsuppl):
 
-        return self.__repository.update_user_nutr_suppl(userid)
+        return self.__repository.update_user_nutr_suppl(userid, nutrsuppl)
     
     def get_user_RDI(self, userid: str):
         return self.__repository.get_user_RDI(userid)

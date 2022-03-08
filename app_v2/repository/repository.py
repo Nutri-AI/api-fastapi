@@ -1,56 +1,78 @@
 from urllib import response
 from boto3.resources.base import ServiceResource
 from boto3.dynamodb.conditions import Key, Attr
+from decimal import Decimal
 
 from datetime import date
+from dateutil.parser import parse
+
 
 ###
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db= db
-        self.__table = db.Table('NutriAI')
+        self.__table = self.__db.Table('NutriAI')
 
-    # calculate RDI
-    def __calculate_RDI(self, physique:dict) -> dict:
-        today = date.today()
-        cal_age = lambda birth : today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
-        age = cal_age(physique.birth)
+    def __get_rdi_pk(age):
         if age == 0:
-            PK = 'RDI#0'
+            return 'RDI#0'
         elif age in range(1,3):
-            PK = 'RDI#1-2'
+            return 'RDI#1-2'
         elif age in range(3,6):
-            PK = 'RDI#3-5'
+            return 'RDI#3-5'
         elif age in range(6,9):
-            PK = 'RDI#6-8'
+            return 'RDI#6-8'
         elif age in range(9,12):
-            PK = 'RDI#9-11'
+            return 'RDI#9-11'
         elif age in range(12,15):
-            PK = 'RDI#12-14'
+            return 'RDI#12-14'
         elif age in range(15,19):
-            PK = 'RDI#15-18'
+            return 'RDI#15-18'
         elif age in range(19,30):
-            PK = 'RDI#19-29'
+            return 'RDI#19-29'
         elif age in range(30,50):
-            PK = 'RDI#30-49'
+            return 'RDI#30-49'
         elif age in range(50,65):
-            PK = 'RDI#50-64'
+            return 'RDI#50-64'
         elif age in range(65,75):
-            PK = 'RDI#65-74'
+            return 'RDI#65-74'
         elif age >=75:
-            PK = 'RDI#75-'
+            return 'RDI#75-'
         else:
             return None
-        
+
+
+
+    # calculate RDI
+    def __calculate_RDI(self, physique: dict) -> dict:
+        today = date.today()
+        #birth= parse(physique.birth)
+        cal_age= lambda birth: today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+        age = Decimal(cal_age(physique.birth))
+        PK = self.__get_rdi_pk(age)
         SK = f'RDI#{physique.sex}'
 
-        response = self.__table.get_item(
+        temp_rdi = self.__table.get_item(
             Key={
                 'PK': PK,
                 'SK': SK
             }
-        )
-        return response.get('Item').get('rdi')
+        ).get('Item').get('rdi')
+
+        if physique.sex == 'M':
+            cal = Decimal('66.47') + (Decimal('13.75')*physique.weight) + (Decimal('5')*physique.height) - (Decimal('6.76')*age)
+        elif physique.sex == 'F':
+            cal = Decimal('655.1') + (Decimal('9.56')*physique.weight) + (Decimal('1.85')*physique.height) - (Decimal('4.68')*age)
+        else:
+            pass
+        temp_rdi['Calories'] = cal
+        temp_rdi['Carbohydrate'] = (Decimal('0.6')*cal)/Decimal('4')
+        temp_rdi['Protein'] = (Decimal('0.17')*cal)/Decimal('4')
+        temp_rdi['Fat'] = (Decimal('0.23')*cal)/Decimal('9')
+        
+        return
+
+ 
     
 
     # user 가입
@@ -68,14 +90,14 @@ class UserRepository:
             Item=request,
             ConditionExpression=Attr('PK').not_exists() & Attr('SK').not_exists()
         )
-        return #######
+        return response
 
 
 
     # physique, RDI 수정
     # input: userid, physique{}
     # output: {physique, RDI}
-    def update_user_physique(self, userid:str, physique:dict) -> dict:
+    def update_user_physique(self, userid:str, physique:dict):
         new_RDI = self.__calculate_RDI(physique)
         response = self.__table.update_item(
             Key={
@@ -116,7 +138,7 @@ class UserRepository:
                 SET
                     nutr_suppl = :new_nutr_suppl
             ''',
-            ExpressionAttributeValue={
+            ExpressionAttributeValues={
                 ':new_nutr_suppl' : nutrsuppl
             },
             ReturnValues='UPDATED_NEW'
@@ -198,10 +220,10 @@ class UserRepository:
             },
             ReturnValues='ALL_OLD'
         )
-        return response.get('Attributes').get('username')
+        return response.get('Attributes').get('userid')
 
 
 
 class LogRepository:
-    def __init__(self, db: ServiceResource)-> None:
+    def __init__(self, db: ServiceResource):
         self.__db= db

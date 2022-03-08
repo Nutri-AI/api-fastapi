@@ -2,6 +2,7 @@ from signal import raise_signal
 from turtle import st
 from fastapi import APIRouter, HTTPException, status
 
+from app_v2.domain.domain import NutrientsName
 
 from app_v2.domain.domain import UserDomain, LogDomain, UserJoinModel, physique
 
@@ -40,13 +41,14 @@ class UserRouter:
                 raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail= 'No exist userid')
         
         @api_router.put('/update/nutrients/{userid}')
-        def update_user_nutr_suppl(userid):
-            return self.__domain.update_user_nutr_suppl(userid)
+        def update_user_nutr_suppl(userid, nutrsuppl: NutrientsName):
+            return self.__domain.update_user_nutr_suppl(userid, nutrsuppl)
         
         @api_router.get('/get/RDI/{userid}')
-        def get_user_RDI(self, userid: str):
+        def get_user_RDI(userid: str):
             return self.__domain.get_user_RDI(userid)
 
+        return api_router
         
 class LogRouter:
     def __init__(self, domain: LogDomain):
@@ -54,4 +56,6 @@ class LogRouter:
     
     @property
     def router(self):
-        api_router= APIRouter(prefix= 'log/', tags= ['log'])
+        api_router= APIRouter(prefix= '/log', tags= ['log'])
+
+        return api_router
