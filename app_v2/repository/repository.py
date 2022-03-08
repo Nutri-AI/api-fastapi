@@ -42,11 +42,17 @@ class UserRepository:
 
     # calculate RDI
     def __calculate_RDI(self, physique:dict) -> dict:
+        user_birth = physique['birth']
+        user_sex = physique['sex']
+        user_height = physique['height']
+        user_weight = physique['weight']
+        user_pai = physique['PAI']
+
         today = date.today()
         cal_age = lambda birth : today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
-        age = Decimal(cal_age(date(physique.birth)))
+        age = Decimal(cal_age(date(user_birth)))
         PK = self.__get_rdi_pk(age)
-        SK = f'RDI#{physique.sex}'
+        SK = f'RDI#{user_sex}'
 
         temp_rdi = self.__table.get_item(
             Key={
@@ -56,15 +62,17 @@ class UserRepository:
         ).get('Item').get('rid')
 
         if physique.sex == 'M':
-            cal = Decimal('66.47') + (Decimal('13.75')*physique.weight) + (Decimal('5')*physique.height) - (Decimal('6.76')*age)
+            cal = Decimal('66.47') + (Decimal('13.75')*user_weight) + (Decimal('5')*user_height) - (Decimal('6.76')*age)
         elif physique.sex == 'F':
-            cal = Decimal('655.1') + (Decimal('9.56')*physique.weight) + (Decimal('1.85')*physique.height) - (Decimal('4.68')*age)
+            cal = Decimal('655.1') + (Decimal('9.56')*user_weight) + (Decimal('1.85')*user_height) - (Decimal('4.68')*age)
         else:
             pass
-        temp_rdi['Calories'] = cal
-        temp_rdi['Carbohydrate'] = (Decimal('0.6')*cal)/Decimal('4')
-        temp_rdi['Protein'] = (Decimal('0.17')*cal)/Decimal('4')
-        temp_rdi['Fat'] = (Decimal('0.23')*cal)/Decimal('9')
+
+        user_cal = cal * user_pai
+        temp_rdi['Calories'] = user_cal
+        temp_rdi['Carbohydrate'] = (Decimal('0.6')*user_cal)/Decimal('4')
+        temp_rdi['Protein'] = (Decimal('0.17')*user_cal)/Decimal('4')
+        temp_rdi['Fat'] = (Decimal('0.23')*user_cal)/Decimal('9')
         
         return
 
@@ -236,6 +244,4 @@ class LogRepository:
             },
             ConditionExpression='attribute_not_exists(PK) AND attribute_not_exists(SK)'
         )
-    
-    # meal log 가져오기
-    def get_meal_log(self, userid:str)
+        return
