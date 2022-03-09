@@ -11,7 +11,7 @@ from numpy import delete
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db= db
-        self.__table = self.__db.Table('NutriAI')
+        self.__table = self.__db.Table('nutriai_test')
 
     def __get_rdi_pk(self, age):
         if age == 0:
@@ -236,7 +236,7 @@ class UserRepository:
 class LogRepository:
     def __init__(self, db: ServiceResource):
         self.__db= db
-        self.__table= self.__db.Table('NutriAI')
+        self.__table= self.__db.Table('nutriai_test')
 
 
     ####### MEAL log
