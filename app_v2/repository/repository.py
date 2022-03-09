@@ -43,16 +43,16 @@ class UserRepository:
 
     # calculate RDI
     def __calculate_RDI(self, physique: dict) -> dict:
-        user_birth = date(physique['birth'])
+        user_birth = datetime.strptime(physique['birth'],'%Y-%m-%d')
         user_sex = physique['sex']
         user_height = float(physique['height'])
         user_weight = float(physique['weight'])
-        user_pai = float(physique['pai'])
+        user_pai = float(physique['PAI'])
 
         today = date.today()
         cal_age= lambda birth: today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
         age = cal_age(user_birth)
-        
+
         PK = self.__get_rdi_pk(age)
         SK = f'RDI#{user_sex}'
 
