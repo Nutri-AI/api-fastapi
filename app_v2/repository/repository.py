@@ -11,7 +11,7 @@ class UserRepository:
         self.__db= db
         self.__table = self.__db.Table('NutriAI')
 
-    def __get_rdi_pk(age):
+    def __get_rdi_pk(self, age):
         if age == 0:
             return 'RDI#0'
         elif age in range(1,3):
@@ -70,10 +70,10 @@ class UserRepository:
         else:
             pass
 
-        temp_rdi['Calories'] = cal
-        temp_rdi['Carbohydrate'] = (0.6*cal)/4
-        temp_rdi['Protein'] = (0.17*cal)/4
-        temp_rdi['Fat'] = (0.23*cal)/9
+        temp_rdi['Calories'] = Decimal(cal)
+        temp_rdi['Carbohydrate'] = Decimal((0.6*cal)/4)
+        temp_rdi['Protein'] = Decimal((0.17*cal)/4)
+        temp_rdi['Fat'] = Decimal((0.23*cal)/9)
         
         return temp_rdi
 
@@ -234,7 +234,7 @@ class LogRepository:
         self.__db= db
         self.__table= self.__db.Table('NutriAI')
 
-
+    ####### MEAL log
     # 식단 로그 입력
     def post_meal_log(self, userid:str, image_key:str, food_list:list):
         response = self.__table.put_item(
@@ -246,7 +246,15 @@ class LogRepository:
             }
         )
         return response
+    
+    # get meal log 가져오기
+    def get_meal_log(self, userid:str):
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with('MEAL#'),
 
+        )
+
+    ######### FOOOD 
     # 식품 영양성분 정보 받기
     def get_food_nutrients(self, food_cat:str, food_name: str):
         response = self.__table.get_item(
@@ -259,6 +267,7 @@ class LogRepository:
         return response.get('Item').get('nutrients')
     
 
+    ####### NUTRTAKE log
     # 영양제 로그 입력
     def post_nutrsuppl_log(self, userid:str, nutr_suppl_list:dict):
         response = self.__table.put_item(
@@ -282,6 +291,7 @@ class LogRepository:
         return response.get('Item').get('nutrients')
 
 
+    ######## 
     # 사용자 영양상테 로그 입력&업데이트
     def update_user_nutr_log(self, userid:str, nutrients:dict):
         response = self.__table.update_item(
