@@ -1,10 +1,8 @@
-from urllib import response
 from boto3.resources.base import ServiceResource
 from boto3.dynamodb.conditions import Key, Attr
 from decimal import Decimal
 
-from datetime import date
-from dateutil.parser import parse
+from datetime import date, datetime
 
 
 ###
@@ -45,12 +43,18 @@ class UserRepository:
 
     # calculate RDI
     def __calculate_RDI(self, physique: dict) -> dict:
+        user_birth = date(physique['birth'])
+        user_sex = physique['sex']
+        user_height = float(physique['height'])
+        user_weight = float(physique['weight'])
+        user_pai = float(physique['pai'])
+
         today = date.today()
-        #birth= parse(physique.birth)
         cal_age= lambda birth: today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
-        age = Decimal(cal_age(physique.birth))
+        age = cal_age(user_birth)
+        
         PK = self.__get_rdi_pk(age)
-        SK = f'RDI#{physique.sex}'
+        SK = f'RDI#{user_sex}'
 
         temp_rdi = self.__table.get_item(
             Key={
@@ -59,18 +63,19 @@ class UserRepository:
             }
         ).get('Item').get('rdi')
 
-        if physique.sex == 'M':
-            cal = Decimal('66.47') + (Decimal('13.75')*physique.weight) + (Decimal('5')*physique.height) - (Decimal('6.76')*age)
-        elif physique.sex == 'F':
-            cal = Decimal('655.1') + (Decimal('9.56')*physique.weight) + (Decimal('1.85')*physique.height) - (Decimal('4.68')*age)
+        if user_sex == 'M':
+            cal = (66.47 + (13.75*user_weight) + (5*user_height) - (6.76*age))*user_pai
+        elif user_sex == 'F':
+            cal = (655.1 + (9.56*user_weight) + (1.85*user_height) - (4.68*age))*user_pai
         else:
             pass
+
         temp_rdi['Calories'] = cal
-        temp_rdi['Carbohydrate'] = (Decimal('0.6')*cal)/Decimal('4')
-        temp_rdi['Protein'] = (Decimal('0.17')*cal)/Decimal('4')
-        temp_rdi['Fat'] = (Decimal('0.23')*cal)/Decimal('9')
+        temp_rdi['Carbohydrate'] = (0.6*cal)/4
+        temp_rdi['Protein'] = (0.17*cal)/4
+        temp_rdi['Fat'] = (0.23*cal)/9
         
-        return
+        return temp_rdi
 
  
     
@@ -229,6 +234,73 @@ class LogRepository:
         self.__db= db
         self.__table= self.__db.Table('NutriAI')
 
+
+    # 식단 로그 입력
+    def post_meal_log(self, userid:str, image_key:str, food_list:list):
+        response = self.__table.put_item(
+            Item={
+                'PK': f'USER#{userid}',
+                'SK': f'MEAL#{datetime.now()}',
+                'photo': image_key,
+                'food_list': food_list
+            }
+        )
+        return response
+
+    # 식품 영양성분 정보 받기
+    def get_food_nutrients(self, food_cat:str, food_name: str):
+        response = self.__table.get_item(
+            Key={
+                'PK': f'FOOD#{food_cat}',
+                'SK': f'FOOD#{food_name}'
+            },
+            ProjectionExpression='nutrients'
+        )
+        return response.get('Item').get('nutrients')
+    
+
+    # 영양제 로그 입력
+    def post_nutrsuppl_log(self, userid:str, nutr_suppl_list:dict):
+        response = self.__table.put_item(
+            Item={
+                'PK': f'USER#{userid}',
+                'SK': f'NUTRTAKE{datetime.now()}',
+                'nutr_suppl_list': nutr_suppl_list
+            }
+        )
+        return response
+
+    # 영양제 영양정보 받기
+    def get_nutr_suppl_nutrients(self, nutr_cat:str, product_code:str):
+        response = self.__table.get_item(
+            Key={
+                'PK': f'NUTRSUPPL#{nutr_cat}',
+                'SK': f'NUTRSUPPL#{product_code}'
+            },
+            ProjectionExpression='nutrients'
+        )
+        return response.get('Item').get('nutrients')
+
+
+    # 사용자 영양상테 로그 입력&업데이트
+    def update_user_nutr_log(self, userid:str, nutrients:dict):
+        response = self.__table.update_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'NUTRSTATUS#{date.today()}'
+            },
+            UpdateExpression='''
+                ADD
+                    nutr_intake = :new_nutr_intake
+            ''',
+            ExpressionAttributeValues={
+                ':new_nutr_intake' : nutrients
+            },
+            ReturnValues='ALL_NEW'
+        )
+        return response.get('Attributes')
+
+
     def upload_image(self, userid: str, image, detail: str):
         # 대분류 후보?
         return 
@@ -244,6 +316,9 @@ class LogRepository:
         response= self.__table.put_item()
         
         return response 
+
+
+
 
     def recommend_nutrients(self, userid: str, request):
         #부족 영양소로 db 영양제 정보에 어떻게 접근??
