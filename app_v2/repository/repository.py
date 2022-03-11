@@ -428,7 +428,7 @@ class ImageRepository:
         self.__s3 = s3 # client
     
     # get presigned url
-    def __get_presigned_url(client, bucket_name, object_name, expiration=3600) -> str:
+    def __get_presigned_url(client, bucket_name:str, object_name:str, expiration=3600) -> str:
         try:
             response = client.generate_presigned_url(
                 'get_object',
@@ -444,8 +444,7 @@ class ImageRepository:
         return response.get('url')
 
 
-    def post_image(self, object_name):
-        # object_name = 'Solving-FB-problems-with-AI-2.jpeg'
+    def post_image(self, object_name:str):
         response = self.__get_presigned_url(self.__s3, 'nutriai', object_name)
         if response is None:
             exit(1)
