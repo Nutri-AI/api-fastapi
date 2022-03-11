@@ -68,9 +68,9 @@ class UserRepository:
 
         # 사용자 에너지 권장 섭취량 계산
         if user_sex == 'M':
-            cal = (66.47 + (13.75*user_weight) + (5*user_height) - (6.76*age))*user_pai
+            cal = (66.47 + (13.75*user_weight) + (5*user_height) - (6.76*age)) * user_pai
         elif user_sex == 'F':
-            cal = (655.1 + (9.56*user_weight) + (1.85*user_height) - (4.68*age))*user_pai
+            cal = (655.1 + (9.56*user_weight) + (1.85*user_height) - (4.68*age)) * user_pai
         else:
             pass
         # rid 속성에 입력
