@@ -1,11 +1,12 @@
 from boto3.resources.base import ServiceResource
 from boto3.dynamodb.conditions import Key, Attr
+from botocore.exceptions import ClientError
+import logging
+import requests 
+
 from decimal import Decimal
 
 from datetime import date, datetime
-
-from numpy import delete
-
 
 ###
 class UserRepository:
@@ -418,3 +419,39 @@ class LogRepository:
     # def recommend_nutrients(self, userid: str, request):
     #     #부족 영양소로 db 영양제 정보에 어떻게 접근??
     #     return
+
+
+
+
+class ImageRepository:
+    def __init__(self, s3) -> None:
+        self.__s3 = s3 # client
+    
+    # get presigned url
+    def __get_presigned_url(client, bucket_name, object_name, expiration=3600) -> str:
+        try:
+            response = client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': bucket_name,
+                    'Key':object_name
+                },
+                ExpiresIn=expiration
+            )
+        except ClientError as e:
+            logging.error(e)
+            return None
+        return response.get('url')
+
+
+    def post_image(self, object_name):
+        # object_name = 'Solving-FB-problems-with-AI-2.jpeg'
+        response = self.__get_presigned_url(self.__s3, 'nutriai', object_name)
+        if response is None:
+            exit(1)
+        # Demonstrate how another Python program can use the presigned URL to upload a file
+        with open(object_name, 'rb') as f:
+            files = {'file': (object_name, f)}
+            http_response = requests.post(response['url'], data=response['fields'], files=files)
+        # If successful, returns HTTP status code 204
+        logging.info(f'File upload HTTP status code: {http_response.status_code}')
