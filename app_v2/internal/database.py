@@ -21,7 +21,7 @@ def initialize_db() -> ServiceResource:
         #  aws_secret_access_key= Config.DB_SECRET_ACCESS_KEY)
           region_name='ap',
           aws_access_key_id= 'x',
-          aws_secret_access_key= 'x'),
+          aws_secret_access_key= 'x')
 
     s3= boto3.resource('s3',
           region_name='ap',
