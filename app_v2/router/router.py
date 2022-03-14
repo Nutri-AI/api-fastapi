@@ -129,7 +129,7 @@ class LogRouter:
             return self.__domain.update_user_nutrtake_nutr_log(userid, nutrients)
 
         ####12 유저 영양 상태 로그 정보 요청 - 특정 날
-        @api_router.get('/get/nutr/lod/{userid}')
+        @api_router.get('/get/nutr/log/{userid}')
         def get_user_nutr_log(userid: str, date):
             return self.__domain.get_user_nutr_log(userid, date)
 
