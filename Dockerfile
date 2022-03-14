@@ -9,3 +9,4 @@ RUN pip install python-multipart
 RUN pip install onnxruntime
 RUN pip install opencv-python
 
+CMD uvicorn app_v2.main:app --reload --host=0.0.0.0 
