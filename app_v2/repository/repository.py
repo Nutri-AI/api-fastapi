@@ -10,6 +10,15 @@ import logging
 
 from datetime import date, datetime
 
+total= {
+    'Protein': 0, 'Fat': 0, 'Carbohydrate': 0, 'Dietary_Fiber': 0, 'Calcium': 0,
+    'Iron': 0, 'Magnesium': 0, 'Phosphorus': 0, 'Potassium': 0, 'Sodium': 0, 'Zinc': 0,
+    'Copper': 0, 'Manganese': 0, 'Selenium': 0, 'Vitamin_A': 0, 'Vitamin_D': 0, 'Niacin': 0,
+    'Folic_acid': 0, 'Vitamin_B12': 0, 'Vitamin_B6': 0, 'Vitamin_C': 0, 'Vitamin_E': 0,
+    'Vitamin_K': 0, 'Leucine': 0, 'Iso_Leucine': 0, 'Histidine': 0, 'Linoleic_Acid': 0, 'Alpha_Linolenic_Acid': 0, 'Lysine': 0, 'Methionine': 0, 'Phenylalanine+Tyrosine': 0,
+    'Threonine': 0, 'Valine': 0, 'Cholesterol': 0
+    }
+
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db, self.__s3= db
@@ -253,7 +262,14 @@ class LogRepository:
             },
             ProjectionExpression='nutrients'
         )
-        return response.get('Item').get('nutrients')
+        nutr_info= response.get('Item').get('nutrients')
+        for i in total.keys():
+            if i in nutr_info.keys():
+                total[i]= nutr_info[i]
+            else:
+                total[i]= 0
+
+        return total
 
     ####### MEAL log
     ####3 유저 식단 섭취 로그 등록
@@ -297,7 +313,14 @@ class LogRepository:
             },
             ProjectionExpression='nutrients'
         )
-        return response.get('Item').get('nutrients')
+        nutr_info= response.get('Item').get('nutrients')
+        for i in total.keys():
+            if i in nutr_info.keys():
+                total[i]= nutr_info[i]
+            else:
+                total[i]= 0
+                
+        return total
 
     ####### NUTRTAKE log
     ####7 유저 영양제 섭취 로그 등록
