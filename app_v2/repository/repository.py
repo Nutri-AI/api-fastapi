@@ -10,6 +10,8 @@ import logging
 
 from datetime import date, datetime
 
+#from app_v2.yolov3_onnx_main import detect_nutriai
+
 total= {
     'Protein': 0, 'Fat': 0, 'Carbohydrate': 0, 'Dietary_Fiber': 0, 'Calcium': 0,
     'Iron': 0, 'Magnesium': 0, 'Phosphorus': 0, 'Potassium': 0, 'Sodium': 0, 'Zinc': 0,
@@ -72,7 +74,7 @@ class UserRepository:
                 'PK': PK,
                 'SK': SK
             }
-        ).get('Item').get('rdi')
+        ).get('Item').get('RDI')
 
         if user_sex == 'M':
             cal = Decimal('66.47') + (Decimal('13.75')*user_weight) + (5*user_height) - (Decimal('6.76')*age)*user_pai
@@ -85,6 +87,10 @@ class UserRepository:
         temp_rdi['Carbohydrate'] = Decimal('0.6')*Decimal(cal)/4
         temp_rdi['Protein'] = Decimal('0.17')*Decimal(cal)/4
         temp_rdi['Fat'] = Decimal('0.23')*Decimal(cal)/9
+        # temp_rdi['Calories'] = cal
+        # temp_rdi['Carbohydrate'] = Decimal('0.6')*cal/4
+        # temp_rdi['Protein'] = Decimal('0.17')*cal/4
+        # temp_rdi['Fat'] = Decimal('0.23')*cal/9
         
         return temp_rdi
         
