@@ -5,6 +5,7 @@ import logging
 import requests 
 
 from decimal import Decimal
+from collections import Counter
 
 from datetime import date, datetime, timedelta
 
@@ -65,7 +66,7 @@ class UserRepository:
                 'PK': PK,
                 'SK': SK
             }
-        ).get('Item').get('rdi')
+        ).get('Item').get('RDI')
 
         # 사용자 에너지 권장 섭취량 계산
         if user_sex == 'M':
@@ -87,7 +88,7 @@ class UserRepository:
 
     # user 가입
     # input: {userid, username, physique{}}
-    # output: ??? #############
+    # output: #############
     def join_user(self, request:dict):
         userid = request.pop('userid')
 
@@ -211,12 +212,12 @@ class UserRepository:
     # input: search word
     # output: [{'prod_name': ...}, {}, .. ]
     ####################3
-    # def get_nutr_suppls(self, search:str) -> list:
-    #     response = self.__table.query(
-    #         KeyConditionExpression=Key('PK').eq('NUTRSUPPL'),
-    #         FilterExpression=Attr('prod_name').contains(search),
-    #     )
-    #     return response.get('Items')
+    def get_nutr_suppl_list(self, search:str) -> list:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq('NUTRSUPPL'),
+            FilterExpression=Attr('title').contains(search),
+        )
+        return response.get('Items')
 
 
     # user 삭제
@@ -234,6 +235,9 @@ class UserRepository:
 
 
 
+
+
+
 class LogRepository:
     def __init__(self, db: ServiceResource):
         self.__db= db
@@ -242,11 +246,13 @@ class LogRepository:
 
     ####### MEAL log
     # post 식단 로그 입력
+    # input : userID, s3 image key, food list
+    # output : ###
     def post_meal_log(self, userid:str, image_key:str, food_list:list):
         response = self.__table.put_item(
             Item={
                 'PK': f'USER#{userid}',
-                'SK': f'MEAL#{datetime.now()}',
+                'SK': f'MEAL#{datetime.now().isoformat()}',
                 'photo': image_key,
                 'food_list': food_list
             }
@@ -254,6 +260,8 @@ class LogRepository:
         return response
     
     # update 식단 로그, 음식 리스트만 수정
+    # input : userID, datetime, new food list
+    # output : updated food list
     def update_meal_log_food_list(self, userid:str, date_time:datetime, new_food_list:list) -> list:
         response = self.__table.update_item(
             Key={
@@ -272,14 +280,18 @@ class LogRepository:
         return response.get('Attributes').get('food_list')
 
     # get 식단 로그 가져오기 - 특정 날
+    # input : userID, date
+    # output : {SK(date), food list} list
     def get_meal_log(self, userid:str, date: date) -> list:
         response = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(f'MEAL#{date}'),
-            ProjectionExpression='SK, food_list'
+            ProjectionExpression='SK, photo, food_list'
         )
         return response.get('Items')
     
     # delete 식단 로그 - 특정 시기
+    # input : userID, datetime
+    # output : #####
     def delete_meal_log(self, userid:str, datetime:datetime):
         response = self.__table.delete_item(
             Key={
@@ -290,9 +302,12 @@ class LogRepository:
         )
         return response
     
-    ######### FOOOD 
+    
+    ######### FOOD 
     # get 식품 영양성분 정보
-    def get_food_nutrients(self, food_cat:str, food_name: str):
+    # input : food category(model output), food name(user choice)
+    # output : nutrient dict
+    def get_food_nutrients(self, food_cat:str, food_name: str) -> dict:
         response = self.__table.get_item(
             Key={
                 'PK': f'FOOD#{food_cat}',
@@ -305,22 +320,26 @@ class LogRepository:
 
     ####### NUTRTAKE log
     # post 영양제 로그
+    # input : userID, nutrition supplement list
+    # output : #####
     def post_nutrtake_log(self, userid:str, nutr_suppl_list:dict):
         response = self.__table.put_item(
             Item={
                 'PK': f'USER#{userid}',
-                'SK': f'NUTRTAKE#{datetime.now()}',
+                'SK': f'NUTRTAKE#{datetime.now().isoformat()}',
                 'nutr_suppl_list': nutr_suppl_list
             }
         )
         return response
 
     # update 영양제 로그
+    # input : userID, datetime, new supplement list
+    # output : updated supplement
     def update_nutrtake_log_suppl_list(self, userid:str, date_time:datetime, new_suppl_list:list) -> list:
         response = self.__table.update_item(
             Key={
                 'PK': f'USER#{userid}',
-                'SK': f'MEAL#{date_time}'
+                'SK': f'NUTRTAKE#{date_time}'
             },
             UpdateExpression='''
                 SET
@@ -334,6 +353,8 @@ class LogRepository:
         return response.get('Attributes').get('nutr_suppl_list')
 
     # get 영양제 로그 가져오기 - 특정 날
+    # input : userID, date
+    # output : {SK(date), food list} list
     def get_nutrtake_log(self, userid:str, date: date) -> list:
         response = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(f'NUTRTAKE#{date}'),
@@ -342,6 +363,8 @@ class LogRepository:
         return response.get('Items')
     
     # delete 영양제 로그 - 특정 시기
+    # input : userID, datetime
+    # output : ######
     def delete_nutrtake_log(self, userid:str, datetime:datetime):
         response = self.__table.delete_item(
             Key={
@@ -356,10 +379,12 @@ class LogRepository:
 
     ####### NUTR SUPPL 
     # get 영양제 영양성분 정보
-    def get_nutr_suppl_nutrients(self, nutr_cat:str, product_code:str):
+    # input : nutrition supplement category, product code
+    # output : nutrient dict
+    def get_nutr_suppl_nutrients(self, nutr_cat:str, product_code:str) -> dict:
         response = self.__table.get_item(
             Key={
-                'PK': f'NUTRSUPPL#{nutr_cat}',
+                'PK': f'NUTRSUPPL',
                 'SK': f'NUTRSUPPL#{product_code}'
             },
             ProjectionExpression='nutrients'
@@ -370,44 +395,44 @@ class LogRepository:
 
     ######## NUTRSTATUS log
 
-    # 사용자 영양상태 로그 입력&업데이트 ############
-    # def update_user_nutr_log(self, userid:str, nutrients:dict):
-    #     response = self.__table.update_item(
-    #         Key={
-    #             'PK': f'USER#{userid}',
-    #             'SK': f'NUTRSTATUS#{date.today()}'
-    #         },
-    #         UpdateExpression='''
-    #             ADD
-    #                 nutr_intake = :new_nutr_intake
-    #         ''',
-    #         ExpressionAttributeValues={
-    #             ':new_nutr_intake' : nutrients
-    #         },
-    #         ReturnValues='ALL_NEW'
-    #     )
-    #     return response.get('Attributes')
-
-    # 사용자 영양상태 식단 로그 입력&업데이트
+    # 사용자 영양상태 로그 입력&업데이트 - 식단
+    # input : userID, nutrients
+    # output : updated attributes
     def update_user_meal_nutr_log(self, userid:str, nutrients:dict):
+        old_status = self.__table.get_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'NUTRSTATUS#{date.today()}#MEAL'
+            }
+        ).get('Item').get('nutr_intake')
+        new_status = Counter(old_status) + Counter(nutrients)
         response = self.__table.update_item(
             Key={
                 'PK': f'USER#{userid}',
                 'SK': f'NUTRSTATUS#{date.today()}#MEAL'
             },
             UpdateExpression='''
-                ADD
-                    nutr_intake = :new_nutr_intake
+                SET
+                    nutr_status = :new_nutr_status
             ''',
             ExpressionAttributeValues={
-                ':new_nutr_intake' : nutrients
+                ':new_nutr_status' : new_status
             },
             ReturnValues='ALL_NEW'
         )
         return response.get('Attributes')
 
-    # 사용자 영양상태 영양제 로그 입력&업데이트
+    # 사용자 영양상태 로그 입력&업데이트 - 영양제
+    # input : userID, nutrients
+    # output : updated attributes
     def update_user_nutrtake_nutr_log(self, userid:str, nutrients:dict):
+        old_status = self.__table.get_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'NUTRSTATUS#{date.today()}#NUTRTAKE'
+            }
+        ).get('Item').get('nutr_intake')
+        new_status = Counter(old_status) + Counter(nutrients)
         response = self.__table.update_item(
             Key={
                 'PK': f'USER#{userid}',
@@ -415,55 +440,88 @@ class LogRepository:
             },
             UpdateExpression='''
                 ADD
-                    nutr_intake = :new_nutr_intake
+                    nutr_status = :new_nutr_status
             ''',
             ExpressionAttributeValues={
-                ':new_nutr_intake' : nutrients
+                ':new_nutr_status' : new_status
             },
             ReturnValues='ALL_NEW'
         )
         return response.get('Attributes')
 
-    # get 사용자 영양상태 로그 - 특정 날짜
+    # get 사용자 영양상태 로그 - 특정 날짜 (식단 + 영양제)
+    # input : userID, date
+    # output : 
     def get_user_nutr_log(self, userid:str, date:date) -> list:
         response = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(f'NUTRSTATUS#{date}'),
             ProjectionExpression='SK, nutr_status'
         )
         return response.get('Items')
-    
-    # get 사용자 영양 상태 로그 - 특정 일 수 범위
-    def get_user_nutr_log_ndays(self,userid:str, ndays:int) -> list:
-        date_from = date.today() - timedelta(days=ndays)
+
+    # get 사용자 영양상태 로그 - 특정 날짜 (식단)
+    # input : userID, date
+    # output : 
+    def get_user_nutr_log_meal(self, userid:str, date:date) -> list:
         response = self.__table.query(
-            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').gt(f'NUTRSTATUS#{date_from}'),
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').eq(f'NUTRSTATUS#{date}#MEAL'),
             ProjectionExpression='SK, nutr_status'
         )
+        return response.get('Items')
+    
+    # get 사용자 영양상태 로그 - 특정 날짜 (식단 - 탄단지)
+    # input : userID, date
+    # output : 
+    def get_user_nutr_log_meal_CPF(self, userid:str, date:date) -> list:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').eq(f'NUTRSTATUS#{date}#MEAL'),
+            ProjectionExpression='SK, nutr_status.Calories, nutr_status.Carbohydrate, nutr_status.Protein, nutr_status.Fat'
+        )
+        return response.get('Items')
 
+    # get 사용자 영양상태 로그 - 특정 날짜 (영양제)
+    # input : userID, date
+    # output : 
+    def get_user_nutr_log_suppl(self, userid:str, date:date) -> list:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').eq(f'NUTRSTATUS#{date}#NUTRTAKE'),
+            ProjectionExpression='SK, nutr_status'
+        )
+        return response.get('Items')
+    
+    # get 사용자 영양 상태 로그 - 오늘부터 n일 (식단 + 영양제)
+    # input : userID, number of days
+    # output :
+    def get_user_nutr_log_ndays(self, userid:str, ndays:int) -> list:
+        date_from = date.today() - timedelta(days=ndays)
+        date_to = date.today()+ timedelta(days=1)
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').between(f'NUTRSTATUS#{date_from}',f'NUTRSTATUS#{date_to}'),
+            ProjectionExpression='SK, nutr_status'
+        )
+        return response.get('Items')
 
+    # get 사용자 영양 상태 로그 - 오늘부터 n일 (식단)
+    # input : userID, number of days
+    # output :
+    def get_user_nutr_log_ndays(self, userid:str, ndays:int) -> list:
+        date_from = date.today() - timedelta(days=ndays)
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').between(f'NUTRSTATUS#{date_from}#MEAL',f'NUTRSTATUS#{date.today()}#MEAL'),
+            ProjectionExpression='SK, nutr_status'
+        )
+        return response.get('Items')
 
-    # def upload_image(self, userid: str, image, detail: str):
-    #     # 대분류 후보?
-    #     return 
-
-    # def record_meal(self, userid: str, big: str, small: str):
-    #     response= self.__table.get_item()
-    #     # 영양 정보 가져와서 로그 기록 저장
-    #     response2= self.__table.update_item()
-    #     return response2
-
-    # def post_time_nutri(self, userid: str, request):
-    #     #유저 아이디 별 저장, 방식에 따라 수정해주십쇼 그냥 적어봤슴다.
-    #     response= self.__table.put_item()
-        
-    #     return response 
-
-
-
-
-    # def recommend_nutrients(self, userid: str, request):
-    #     #부족 영양소로 db 영양제 정보에 어떻게 접근??
-    #     return
+    # get 사용자 영양 상태 로그 - 오늘부터 n일 (영양제)
+    # input : userID, number of days
+    # output :
+    def get_user_nutr_log_ndays(self, userid:str, ndays:int) -> list:
+        date_from = date.today() - timedelta(days=ndays)
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').between(f'NUTRSTATUS#{date_from}#NUTRTAKE',f'NUTRSTATUS#{date.today()}#NUTRTAKE'),
+            ProjectionExpression='SK, nutr_status'
+        )
+        return response.get('Items')
 
 
 
