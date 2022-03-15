@@ -98,6 +98,7 @@ class UserRepository:
     # input: userid, physique{}
     # output: {physique, RDI}
     def join_user(self, request:dict):
+        res= request.copy()
         userid = request.pop('userid')
 
         request['PK'] = f'USER#{userid}'
@@ -106,11 +107,11 @@ class UserRepository:
         request['RDI'] = self.__calculate_RDI(request.get('physique'))
         request['nutr_suppl'] = list()
 
-        response = self.__table.put_item(
+        self.__table.put_item(
             Item=request,
             ConditionExpression=Attr('PK').not_exists() & Attr('SK').not_exists()
         )
-        return response
+        return res
 
 
 
