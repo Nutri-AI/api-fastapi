@@ -58,6 +58,10 @@ class UserDomain():
     ####8 유저 nutr_suppl 정보 요청
     def get_user_nutr_suppl(self, userid: str):
         return self.__repository.get_user_nutr_suppl(userid)
+
+    ####9 search nutr_suppl list
+    def get_nutr_suppl_list(self, search: str):
+        return self.__repository.get_nutr_suppl_list(search)
         
 class LogDomain():
     def __init__(self, repository: LogRepository):
@@ -94,6 +98,10 @@ class LogDomain():
     def post_nutrtake_log(self, userid: str, nutr_suppl_list):
         return self.__repository.post_nutrtake_log(userid, nutr_suppl_list)
     
+    #### update 영양제 섭취 로그에서 영양제 변경
+    def update_nutrtake_log_suppl_list(self, userid:str, date_time, new_suppl_list:list):
+        return self.__repository.update_nutrtake_log_suppl_list(userid, date_time, new_suppl_list)
+
     ####8 유저 영양제 섭취 로그 정보 요청 - 특정 날
     def get_nutrtake_log(self, userid: str, date):
         return self.__repository.get_nutrtake_log(userid, date)
@@ -110,10 +118,34 @@ class LogDomain():
     def update_user_nutrtake_nutr_log(self, userid: str, nutrients):
         return self.__repository.update_user_nutrtake_nutr_log(userid, nutrients)
 
-    ####12 유저 영양 상태 로그 정보 요청 - 특정 날
-    def get_user_nutr_log(self, userid: str, date):
+    #### get 사용자 영양상태 로그 - 특정 날짜 (식단 + 영양제)
+    def get_user_nutr_log(self, userid:str, date): 
         return self.__repository.get_user_nutr_log(userid, date)
 
-    ####13 유저 영양제 추천
+    #### get 사용자 영양상태 로그 - 특정 날짜 (식단)
+    def get_user_nutr_log_meal(self, userid:str, date):
+        return self.__repository.get_user_nutr_log_meal(userid, date)
+
+    #### get 사용자 영양상태 로그 - 특정 날짜 (식단 - 탄단지)
+    def get_user_nutr_log_meal_CPF(self, userid:str, date):
+        return self.__repository.get_user_nutr_log_meal_CPF(userid, date)
+
+    #### get 사용자 영양상태 로그 - 특정 날짜 (영양제)
+    def get_user_nutr_log_suppl(self, userid:str, date):
+        return self.__repository.get_user_nutr_log_suppl(userid, date)
+
+    #### get 사용자 영양 상태 로그 - 오늘부터 n일 (식단 + 영양제)
+    def get_user_nutr_log_ndays(self, userid:str, ndays:int):
+        return self.__repository.get_user_nutr_log_ndays(userid, ndays)
+
+    #### get 사용자 영양 상태 로그 - 오늘부터 n일 (식단)
+    def get_user_fnutr_log_ndays(self, userid:str, ndays:int):
+        return self.__repository.get_user_fnutr_log_ndays(userid, ndays)
+
+    #### get 사용자 영양 상태 로그 - 오늘부터 n일 (영양제)
+    def get_user_nnutr_log_ndays(self, userid:str, ndays:int):
+        return self.__repository.get_user_nnutr_log_ndays(userid, ndays)
+
+    ####1 유저 영양제 추천
     def recommend_nutrients(self, userid: str, request):
         return self.__repository.recommend_nutriendts(userid, request)

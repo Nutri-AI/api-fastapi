@@ -62,6 +62,11 @@ class UserRouter:
         def get_user_nutr_suppl(userid: str):
             return self.__domain.get_user_nutr_suppl(userid)
 
+        ####9 search nutr_suppl list
+        @api_router.get('/search/nutr-list')
+        def get_nutr_suppl_list(search: str):
+            return self.__domain.get_nutr_suppl_list(search)
+
 
         return api_router
         
@@ -108,32 +113,67 @@ class LogRouter:
         def post_nutrtake_log(userid: str, nutr_suppl_list):
             return self.__domain.post_nutrtake_log(userid, nutr_suppl_list)
 
-        ####8 유저 영양제 섭취 로그 정보 요청 - 특정 날
+        ####8 update 영양제 섭취 로그에서 영양제 변경
+        @api_router.put('/update/')
+        def update_nutrtake_log_suppl_list(userid:str, date_time, new_suppl_list:list):
+            return self.__domain.update_nutrtake_log_suppl_list(userid, date_time, new_suppl_list)
+
+        ####9 유저 영양제 섭취 로그 정보 요청 - 특정 날
         @api_router.get('/get/nutrtake/log/{userid}')
         def get_nutrtake_log(userid: str, date):
             return self.__domain.get_nutrtake_log(userid, date)
 
-        ####9 유저 영양제 섭취 로그 삭제 - 특정 시간(시기)
+        ####10 유저 영양제 섭취 로그 삭제 - 특정 시간(시기)
         @api_router.delete('/delete/nutrtake/log/{userid}')
         def delete_nutrtake_log(userid: str, datetime):
             return self.__domain.delete_nutrtake_log(userid, datetime)
 
-        ####10 유저 영양 상태 식단 로그 입력 & 업데이트
+        ####11 유저 영양 상태 식단 로그 입력 & 업데이트
         @api_router.put('/update/meal/nutr/log/{userid}')
         def update_user_meal_nutr_log(userid: str, nutrients):
             return self.__domain.update_user_meal_nutr_log(userid, nutrients)
         
-        ####11 유저 영양 상태 영양제 로그 입력 & 업데이트
+        ####12 유저 영양 상태 영양제 로그 입력 & 업데이트
         @api_router.put('/update/nutrtake/nutr/log/{userid}')
         def update_user_nutrtake_nutr_log(userid: str, nutrients):
             return self.__domain.update_user_nutrtake_nutr_log(userid, nutrients)
-
-        ####12 유저 영양 상태 로그 정보 요청 - 특정 날
-        @api_router.get('/get/nutr/log/{userid}')
-        def get_user_nutr_log(userid: str, date):
+        
+        ####13 get 사용자 영양상태 로그 - 특정 날짜 (식단 + 영양제)
+        @api_router.get('/get/nutr-log')
+        def get_user_nutr_log(self, userid:str, date): 
             return self.__domain.get_user_nutr_log(userid, date)
 
-        ####13 유저 영양제 추천
+        ####14 get 사용자 영양상태 로그 - 특정 날짜 (식단)
+        @api_router.get('/get/nutr-log-meal')
+        def get_user_nutr_log_meal(self, userid:str, date):
+            return self.__domain.get_user_nutr_log_meal(userid, date)
+
+        ####15 get 사용자 영양상태 로그 - 특정 날짜 (식단 - 탄단지)
+        @api_router.get('/get/nutr-log-meal-cpf')
+        def get_user_nutr_log_meal_CPF(self, userid:str, date):
+            return self.__domain.get_user_nutr_log_meal_CPF(userid, date)
+
+        ####16 get 사용자 영양상태 로그 - 특정 날짜 (영양제)
+        @api_router.get('/get/nutr-log-suppl')
+        def get_user_nutr_log_suppl(self, userid:str, date):
+            return self.__domain.get_user_nutr_log_suppl(userid, date)
+
+        ####17 get 사용자 영양 상태 로그 - 오늘부터 n일 (식단 + 영양제)
+        @api_router.get('/get/nutr-log-ndays')
+        def get_user_nutr_log_ndays(userid:str, ndays:int):
+            return self.__domain.get_user_nutr_log_ndays(userid, ndays)
+
+        ####18 get 사용자 영양 상태 로그 - 오늘부터 n일 (식단)
+        @api_router.get('/get/fnutr-log-ndays')
+        def get_user_fnutr_log_ndays(userid:str, ndays:int):
+            return self.__domain.get_user_fnutr_log_ndays(userid, ndays)
+
+        ####19 get 사용자 영양 상태 로그 - 오늘부터 n일 (영양제)
+        @api_router.get('/get/nnutr-log-ndays')
+        def get_user_nnutr_log_ndays(userid:str, ndays:int):
+            return self.__domain.get_user_nnutr_log_ndays(userid, ndays)
+
+        ####20 유저 영양제 추천
         @api_router.get('/recommend/nutrients/{userid}')
         def recommend_nutrients(userid: str, request):
             # request는 부족 영양소?
