@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, status, UploadFile, File
 
-from app_v2.domain.domain import NutrientsName
+from ..domain.domain import NutrientsName
 
-from app_v2.domain.domain import UserDomain, LogDomain, UserJoinModel, physique
+from ..domain.domain import UserDomain, LogDomain, UserJoinModel, physique
 
 class UserRouter:
     def __init__(self, domain: UserDomain):
@@ -165,13 +165,13 @@ class LogRouter:
 
         ####18 get 사용자 영양 상태 로그 - 오늘부터 n일 (식단)
         @api_router.get('/get/fnutr-log-ndays')
-        def get_user_fnutr_log_ndays(userid:str, ndays:int):
-            return self.__domain.get_user_fnutr_log_ndays(userid, ndays)
+        def get_user_nutr_log_meal_ndays(userid:str, ndays:int):
+            return self.__domain.get_user_nutr_log_meal_ndays(userid, ndays)
 
         ####19 get 사용자 영양 상태 로그 - 오늘부터 n일 (영양제)
         @api_router.get('/get/nnutr-log-ndays')
-        def get_user_nnutr_log_ndays(userid:str, ndays:int):
-            return self.__domain.get_user_nnutr_log_ndays(userid, ndays)
+        def get_user_nutr_log_suppl_ndays(userid:str, ndays:int):
+            return self.__domain.get_user_nutr_log_suppl_ndays(userid, ndays)
 
         ####20 유저 영양제 추천
         @api_router.get('/recommend/nutrients/{userid}')

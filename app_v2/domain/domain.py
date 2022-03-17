@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 from decimal import Decimal
 from enum import Enum
 
-from app_v2.repository.repository import UserRepository, LogRepository
+# from app_v2.repository.repository import UserRepository, LogRepository
+from ..repository.repository import UserRepository, LogRepository
 
 class physique(BaseModel):
     birth: str= Field(...,example= "1995-04-04")
@@ -139,12 +140,12 @@ class LogDomain():
         return self.__repository.get_user_nutr_log_ndays(userid, ndays)
 
     #### get 사용자 영양 상태 로그 - 오늘부터 n일 (식단)
-    def get_user_fnutr_log_ndays(self, userid:str, ndays:int):
-        return self.__repository.get_user_fnutr_log_ndays(userid, ndays)
+    def get_user_nutr_log_meal_ndays(self, userid:str, ndays:int):
+        return self.__repository.get_user_nutr_log_meal_ndays(userid, ndays)
 
     #### get 사용자 영양 상태 로그 - 오늘부터 n일 (영양제)
-    def get_user_nnutr_log_ndays(self, userid:str, ndays:int):
-        return self.__repository.get_user_nnutr_log_ndays(userid, ndays)
+    def get_user_nutr_log_suppl_ndays(self, userid:str, ndays:int):
+        return self.__repository.get_user_nutr_log_suppl_ndays(userid, ndays)
 
     ####1 유저 영양제 추천
     def recommend_nutrients(self, userid: str, request):
