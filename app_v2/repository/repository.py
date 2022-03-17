@@ -1,16 +1,21 @@
 from boto3.resources.base import ServiceResource
+from boto3.dynamodb.conditions import Key, Attr
+from botocore.exceptions import ClientError
+import logging
+import requests 
 
-from datetime import date, datetime
 from decimal import Decimal
+from collections import Counter
+
+from datetime import date, datetime, timedelta
 
 ###
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db= db
-        self.__table = db.Table('NutriAI')
+        self.__table = self.__db.Table('nutriai_test')
 
-
-    def __get_rdi_pk(age):
+    def __get_rdi_pk(self, age):
         if age == 0:
             return 'RDI#0'
         elif age in range(1,3):
@@ -41,46 +46,49 @@ class UserRepository:
 
 
     # calculate RDI
-    def __calculate_RDI(self, physique:dict) -> dict:
-        user_birth = physique['birth']
+    def __calculate_RDI(self, physique: dict) -> dict:
+        user_birth = datetime.strptime(physique['birth'],'%Y-%m-%d')
         user_sex = physique['sex']
-        user_height = physique['height']
-        user_weight = physique['weight']
-        user_pai = physique['PAI']
+        user_height = float(physique['height'])
+        user_weight = float(physique['weight'])
+        user_pai = float(physique['PAI'])
 
         today = date.today()
-        cal_age = lambda birth : today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
-        age = Decimal(cal_age(date(user_birth)))
+        cal_age= lambda birth: today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+        age = cal_age(user_birth)
+
         PK = self.__get_rdi_pk(age)
         SK = f'RDI#{user_sex}'
 
+        # 에너지 제외 사용자 권장 섭취량 가져오기
         temp_rdi = self.__table.get_item(
             Key={
                 'PK': PK,
                 'SK': SK
             }
-        ).get('Item').get('rid')
+        ).get('Item').get('RDI')
 
-        if physique.sex == 'M':
-            cal = Decimal('66.47') + (Decimal('13.75')*user_weight) + (Decimal('5')*user_height) - (Decimal('6.76')*age)
-        elif physique.sex == 'F':
-            cal = Decimal('655.1') + (Decimal('9.56')*user_weight) + (Decimal('1.85')*user_height) - (Decimal('4.68')*age)
+        # 사용자 에너지 권장 섭취량 계산
+        if user_sex == 'M':
+            cal = (66.47 + (13.75*user_weight) + (5*user_height) - (6.76*age)) * user_pai
+        elif user_sex == 'F':
+            cal = (655.1 + (9.56*user_weight) + (1.85*user_height) - (4.68*age)) * user_pai
         else:
             pass
-
-        user_cal = cal * user_pai
-        temp_rdi['Calories'] = user_cal
-        temp_rdi['Carbohydrate'] = (Decimal('0.6')*user_cal)/Decimal('4')
-        temp_rdi['Protein'] = (Decimal('0.17')*user_cal)/Decimal('4')
-        temp_rdi['Fat'] = (Decimal('0.23')*user_cal)/Decimal('9')
+        # rid 속성에 입력
+        temp_rdi['Calories'] = Decimal(str(cal))
+        temp_rdi['Carbohydrate'] = Decimal(str((0.6*cal)/4))
+        temp_rdi['Protein'] = Decimal(str((0.17*cal)/4))
+        temp_rdi['Fat'] = Decimal(str((0.23*cal)/9))
         
-        return
+        return temp_rdi
 
+ 
     
 
     # user 가입
     # input: {userid, username, physique{}}
-    # output: ??? #############
+    # output: #############
     def join_user(self, request:dict):
         userid = request.pop('userid')
 
@@ -91,16 +99,16 @@ class UserRepository:
 
         response = self.__table.put_item(
             Item=request,
-            ConditionExpression='attribute_not_exists(PK) AND attribute_not_exists(SK)'
+            ConditionExpression=Attr('PK').not_exists() & Attr('SK').not_exists()
         )
-        return #######
+        return response
 
 
 
     # physique, RDI 수정
     # input: userid, physique{}
     # output: {physique, RDI}
-    def update_user_physique(self, userid:str, physique:dict) -> dict:
+    def update_user_physique(self, userid:str, physique:dict):
         new_RDI = self.__calculate_RDI(physique)
         response = self.__table.update_item(
             Key={
@@ -116,7 +124,7 @@ class UserRepository:
                     physique.PAI = :new_PAI,
                     RDI = :new_RDI
             ''',
-            ExpressionAttributeValue={
+            ExpressionAttributeValues={
                 ':new_birth' : physique.get('birth'),
                 ':new_sex' : physique.get('sex'),
                 ':new_height' : physique.get('height'),
@@ -127,6 +135,18 @@ class UserRepository:
             ReturnValues='UPDATED_NEW'
         )
         return response.get('Attributes')
+
+
+    # search nutr_suppl
+    # input: search word
+    # output: [{'prod_name': ...}, {}, .. ]
+    def get_nutr_suppl_search(self, search:str) -> list:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq('NUTRSUPPL'),
+            FilterExpression=Attr('title').contains(search),
+            ProjectionExpression='SK, title'
+        )
+        return response.get('Items')
 
     # nutr_suppl 수정
     # input: userid, nutr_suppl(prod_code 만 있는 리스트)
@@ -141,7 +161,7 @@ class UserRepository:
                 SET
                     nutr_suppl = :new_nutr_suppl
             ''',
-            ExpressionAttributeValue={
+            ExpressionAttributeValues={
                 ':new_nutr_suppl' : nutrsuppl
             },
             ReturnValues='UPDATED_NEW'
@@ -151,13 +171,14 @@ class UserRepository:
 
     # user 모든 정보 받기
     # input: userid
-    # output: {user item}
+    # output: {user item} - PK, SK 제외
     def get_user(self, userid:str) -> dict:
         response = self.__table.get_item(
             Key={
                 'PK': f'USER#{userid}',
                 'SK': f'USER#{userid}#INFO'
-            }
+            },
+            ProjectionExpression='username, physique, RDI, nutr_suppl'
         )
         return response.get('Item')
     
@@ -200,17 +221,6 @@ class UserRepository:
         )
         return response.get('Item').get('nutr_suppl')
 
-    # search nutr_suppl
-    # input: search word
-    # output: [{'prod_name': ...}, {}, .. ]
-    ####################3
-    # def get_nutr_suppls(self, search:str) -> list:
-    #     response = self.__table.query(
-    #         KeyConditionExpression=Key('PK').eq('NUTRSUPPL'),
-    #         FilterExpression=Attr('prod_name').contains(search),
-    #     )
-    #     return response.get('Items')
-
 
     # user 삭제
     # input : userID
@@ -223,25 +233,378 @@ class UserRepository:
             },
             ReturnValues='ALL_OLD'
         )
-        return response.get('Attributes').get('username')
+        return response.get('Attributes').get('userid')
+
+
+
 
 
 
 class LogRepository:
-    def __init__(self, db: ServiceResource, s3)-> None:
-        self.__db = db
-        self.__table = db.Table('NutriAI')
-        # self.__s3 = s3
-    
-    # meal log 입력
-    def post_meal_log(self, userid:str, image_key:str, food_list:list) -> None:
+    def __init__(self, db: ServiceResource):
+        self.__db= db
+        self.__table= self.__db.Table('nutriai_test')
+
+    ######### FOOD 
+    # get 식품 영양성분 정보
+    # input : food category(model output), food name(user choice)
+    # output : nutrient dict
+    def get_food_nutrients(self, food_cat:str, food_name: str) -> dict:
+        response = self.__table.get_item(
+            Key={
+                'PK': f'FOOD#{food_cat}',
+                'SK': f'FOOD#{food_name}'
+            },
+            ProjectionExpression='nutrients'
+        )
+        return response.get('Item').get('nutrients')
+
+
+    ####### NUTR SUPPL 
+    # get 영양제 영양성분 정보
+    # input : nutrition supplement category, product code
+    # output : nutrient dict
+    def get_nutr_suppl_nutrients(self, nutr_cat:str, product_code:str) -> dict:
+        response = self.__table.get_item(
+            Key={
+                'PK': f'NUTRSUPPL#{nutr_cat}',
+                'SK': f'NUTRSUPPL#{product_code}'
+            },
+            ProjectionExpression='nutrients'
+        )
+        return response.get('Item').get('nutrients')
+
+
+
+
+    ####### MEAL log
+    # post 식단 로그 입력
+    # input : userID, s3 image key, food list
+    # output : ###
+    def post_meal_log(self, userid:str, image_key:str, food_list:list):
+        dt = datetime.now()
         response = self.__table.put_item(
             Item={
                 'PK': f'USER#{userid}',
-                'SK': f'MEAL#{datetime.now()}',
+                'SK': f'{dt.date().isoformat()}#MEAL#{dt.time().isoformat()}',
                 'photo': image_key,
                 'food_list': food_list
-            },
-            ConditionExpression='attribute_not_exists(PK) AND attribute_not_exists(SK)'
+            }
         )
-        return
+        return response
+    
+    # get 식단 로그 가져오기 - 특정 날
+    # input : userID, date
+    # output : {SK(date), food list} list
+    def get_meal_log(self, userid:str, date:date) -> list:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(f'{date}#MEAL#'),
+            ProjectionExpression='SK, photo, food_list'
+        )
+        return response.get('Items')
+
+    # update 식단 로그, 음식 리스트만 수정
+    # input : userID, datetime(isoformat), new food list
+    # output : updated food list
+    def update_meal_log_food_list(self, userid:str, sk_key:str, new_food_list:list) -> list:
+        response = self.__table.update_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': sk_key
+            },
+            UpdateExpression='''
+                SET
+                    food_list = :new_food_list
+            ''',
+            ExpressionAttributeValues={
+                ':new_food_list' : new_food_list
+            },
+            ReturnValues='UPDATED_NEW'
+        )
+        return response.get('Attributes').get('food_list')
+
+    # delete 식단 로그 - 특정 시기
+    # input : userID, datetime
+    # output : #####
+    def delete_meal_log(self, userid:str, sk_key:str):
+        response = self.__table.delete_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': sk_key
+            },
+            # ReturnValues='ALL_OLD'
+        )
+        return response
+    
+    
+
+    
+
+    ####### NUTRTAKE log
+    # post 영양제 로그
+    # input : userID, nutrition supplement list
+    # output : #####
+    def post_nutrtake_log(self, userid:str, nutr_suppl_take:dict):
+        dt = datetime.now()
+        response = self.__table.put_item(
+            Item={
+                'PK': f'USER#{userid}',
+                'SK': f'{dt.date().isoformat()}#SUPPLTAKE#{dt.time().isoformat()}',
+                'nutr_suppl_take': nutr_suppl_take
+            }
+        )
+        return response
+
+    # get 영양제 로그 가져오기 - 특정 날
+    # input : userID, date
+    # output : {SK(date), food list} list
+    def get_nutrtake_log(self, userid:str, date:date) -> list:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(f'{date}#SUPPLTAKE#'),
+            ProjectionExpression='SK, nutr_suppl_take'
+        )
+        return response.get('Items')
+    
+    # update 영양제 로그
+    # input : userID, datetime, new supplement list
+    # output : updated supplement
+    def update_nutrtake_log_suppl_list(self, userid:str, sk_key:str, new_suppl_take:dict) -> list:
+        response = self.__table.update_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': sk_key
+            },
+            UpdateExpression='''
+                SET
+                    nutr_suppl_take = :new_nutr_suppl_take
+            ''',
+            ExpressionAttributeValues={
+                ':new_nutr_suppl_take' : new_suppl_take
+            },
+            ReturnValues='UPDATED_NEW'
+        )
+        return response.get('Attributes').get('nutr_suppl_take')
+    
+    # delete 영양제 로그 - 특정 시기
+    # input : userID, datetime
+    # output : ######
+    def delete_nutrtake_log(self, userid:str, sk_key:str):
+        response = self.__table.delete_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': sk_key
+            },
+            # ReturnValues='ALL_OLD'
+        )
+        return response
+
+
+
+
+
+
+    ######## NUTRSTATUS log
+    # 사용자 영양상태 로그 입력&업데이트 - 식단
+    # input : userID, nutrients
+    # output : updated attributes
+    def update_user_meal_nutr_log(self, userid:str, food_nutrients:dict):
+        try:
+            old_status = self.__table.get_item(
+                Key={
+                    'PK': f'USER#{userid}',
+                    'SK': f'{date.today()}#NUTRSTATUS#MEAL'
+                }
+            ).get('Item').get('nutr_intake')
+        except:
+            old_status = dict()
+        new_status = Counter(old_status) + Counter(food_nutrients)
+        response = self.__table.update_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'{date.today()}#NUTRSTATUS#MEAL'
+            },
+            UpdateExpression='''
+                SET
+                    nutr_status = :new_nutr_status,
+                    status_type = :type
+            ''',
+            ExpressionAttributeValues={
+                ':new_nutr_status' : new_status,
+                ':type' : 'MEAL'
+            },
+            ReturnValues='ALL_NEW'
+        )
+        return response.get('Attributes')
+
+    # 사용자 영양상태 로그 입력&업데이트 - 영양제
+    # input : userID, nutrients
+    # output : updated attributes
+    def update_user_nutrtake_nutr_log(self, userid:str, suppl_nutrients:dict):
+        try:
+            old_status = self.__table.get_item(
+                Key={
+                    'PK': f'USER#{userid}',
+                    'SK': f'{date.today()}#NUTRSTATUS#SUPPLTAKE'
+                }
+            ).get('Item').get('nutr_intake')
+        except:
+            old_status = dict()
+        new_status = Counter(old_status) + Counter(suppl_nutrients)
+        response = self.__table.update_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'{date.today()}#NUTRSTATUS#SUPPLTAKE'
+            },
+            UpdateExpression='''
+                SET
+                    nutr_status = :new_nutr_status,
+                    status_type = :type
+            ''',
+            ExpressionAttributeValues={
+                ':new_nutr_status' : new_status,
+                ':type' : 'SUPPLTAKE'
+            },
+            ReturnValues='ALL_NEW'
+        )
+        return response.get('Attributes')
+
+    # get 사용자 영양상태 로그 - 특정 날짜 (식단 + 영양제)
+    # input : userID, date
+    # output : [{SK, nutr_status},{SK, nutr_status}]
+    def get_user_nutr_log(self, userid:str, date:date) -> dict:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(f'{date}#NUTRSTATUS#'),
+            ProjectionExpression='SK, nutr_status'
+        ).get('Items')
+        result = Counter(dict())
+        for i in range(len(response)):
+            result += Counter(response[i].get('nutr_status'))
+        return result
+
+    # get 사용자 영양상태 로그 - 특정 날짜 (식단)
+    # input : userID, date
+    # output : {SK, nutr_status}
+    def get_user_nutr_log_meal(self, userid:str, date:date) -> dict:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').eq(f'{date}#NUTRSTATUS#MEAL'),
+            ProjectionExpression='SK, nutr_status'
+        )
+        return response.get('Items')[0]
+    
+    # get 사용자 영양상태 로그 - 특정 날짜 (식단 - 탄단지)
+    # input : userID, date
+    # output : {SK, nutr_status}
+    def get_user_nutr_log_meal_CPF(self, userid:str, date:date) -> dict:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').eq(f'{date}#NUTRSTATUS#MEAL'),
+            ExpressionAttributeNames={'#ns': 'nutr_status'},
+            ProjectionExpression='SK, #ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
+        )
+        return response.get('Items')[0]
+
+    # get 사용자 영양상태 로그 - 특정 날짜 (영양제)
+    # input : userID, date
+    # output : {SK, nutr_status}
+    def get_user_nutr_log_suppl(self, userid:str, date:date) -> dict:
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').eq(f'{date}#NUTRSTATUS#SUPPLTAKE'),
+            ProjectionExpression='SK, nutr_status'
+        )
+        return response.get('Items')[0]
+    
+
+
+
+    # get 사용자 영양 상태 로그 - 기간 : 오늘부터 n일 (식단 + 영양제)
+    # input : userID, number of days
+    # output :
+    def get_user_nutr_log_ndays(self, userid:str, ndays:int) -> dict:
+        date_from = date.today() - timedelta(days=ndays-1)
+        date_to = date.today() + timedelta(days=1)
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').between(f'{date_from}#NUTRSTATUS#',f'{date_to}#NUTRSTATUS#'),
+            FilterExpression=Attr('nutr_status').exists(),
+            ProjectionExpression='SK, nutr_status'
+        ).get('Items')
+        result = Counter(dict())
+        for i in range(len(response)):
+            result += Counter(response[i].get('nutr_status'))
+        return dict(result)
+
+    # get 사용자 영양 상태 로그 - 기간 : 오늘부터 n일 (식단)
+    # input : userID, number of days
+    # output :
+    def get_user_nutr_log_meal_ndays(self, userid:str, ndays:int) -> dict:
+        date_from = date.today() - timedelta(days=ndays-1)
+        date_to = date.today() + timedelta(days=1)
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').between(f'{date_from}#NUTRSTATUS#',f'{date_to}#NUTRSTATUS#'),
+            FilterExpression=Attr('status_type').eq('MEAL'),
+            ProjectionExpression='SK'
+        ).get('Items')
+        result = Counter(dict())
+        for i in range(len(response)):
+            result += Counter(response[i].get('nutr_status'))
+        return dict(result)
+
+    # get 사용자 영양 상태 로그 - 기간 : 오늘부터 n일 (영양제)
+    # input : userID, number of days
+    # output :
+    def get_user_nutr_log_suppl_ndays(self, userid:str, ndays:int) -> dict:
+        date_from = date.today() - timedelta(days=ndays-1)
+        date_to = date.today() + timedelta(days=1)
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').between(f'{date_from}#NUTRSTATUS#',f'{date_to}#NUTRSTATUS#'),
+            FilterExpression=Attr('status_type').eq('SUPPLTAKE'),
+            ProjectionExpression='SK, nutr_status'
+        ).get('Items')
+        for i in range(len(response)):
+            result += Counter(response[i].get('nutr_status'))
+        return dict(result)
+
+    
+
+    # home page query
+    def get_user_today_homepage(self, userid:str):
+        response = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(date.today().isoformat()),
+            FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
+            ExpressionAttributeNames={'#ns': 'nutr_status'},
+            ProjectionExpression='SK, status_type, food_list, #ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
+        )
+        return response
+
+
+
+
+class ImageRepository:
+    def __init__(self, s3) -> None:
+        self.__s3 = s3 # client
+    
+    # get presigned url
+    def __get_presigned_url(client, bucket_name:str, object_name:str, expiration=3600) -> str:
+        try:
+            response = client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': bucket_name,
+                    'Key':object_name
+                },
+                ExpiresIn=expiration
+            )
+        except ClientError as e:
+            logging.error(e)
+            return None
+        return response.get('url')
+
+
+    def post_image(self, object_name:str):
+        response = self.__get_presigned_url(self.__s3, 'nutriai', object_name)
+        if response is None:
+            exit(1)
+        # Demonstrate how another Python program can use the presigned URL to upload a file
+        with open(object_name, 'rb') as f:
+            files = {'file': (object_name, f)}
+            http_response = requests.post(response['url'], data=response['fields'], files=files)
+        # If successful, returns HTTP status code 204
+        logging.info(f'File upload HTTP status code: {http_response.status_code}')
