@@ -247,19 +247,19 @@ class LogRepository:
         self.__db, self.__s3= db
         self.__table= self.__db.Table('nutriai_test')
 
-    # ####1 이미지 S3에 업로드
-    # def upload_image(self, userid: str, image):
-    #     s3= self.__s3
-    #     obj_path= os.path.basename(image.filename)
-    #     try: 
-    #         s3.Bucket('nutriai').upload_fileobj(image.file, f'{userid}/{obj_path}',
-    #                         ExtraArgs={'ACL': 'public-read','ContentType': image.content_type}
-    #                     ) 
-    #     except ClientError as e : logging.error(e)
-    #     #link= f'https://nutriai.s3.ap-northeast-2.amazonaws.com/{userid}/{obj_path}'
-    #     link= f'{userid}/{obj_path}'
-    #     return link
-    #     #detect_nutriai.main(link)
+    ####1 이미지 S3에 업로드
+    def upload_image(self, userid: str, image):
+        s3= self.__s3
+        obj_path= os.path.basename(image.filename)
+        try: 
+            s3.Bucket('nutriai').upload_fileobj(image.file, f'{userid}/{obj_path}',
+                            ExtraArgs={'ACL': 'public-read','ContentType': image.content_type}
+                        ) 
+        except ClientError as e : logging.error(e)
+        #link= f'https://nutriai.s3.ap-northeast-2.amazonaws.com/{userid}/{obj_path}'
+        link= f'{userid}/{obj_path}'
+        return link
+        #detect_nutriai.main(link)
 
     #### post img
     def __get_presigned_post(client, bucket:str, key_name:str, fields=None, conditions=None, expiration=60):
