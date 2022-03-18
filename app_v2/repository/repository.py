@@ -577,7 +577,15 @@ class LogRepository:
             if 'food_list' in item.keys():
                 response['MEAL'].append([item['SK'].replace('#MEAL#','T'), item['food_list']])
             elif item['status_type'] == 'MEAL':
-                response['nutr_status'] = item['nutr_status']
+                try:
+                    response['nutr_status'] = item['nutr_status']
+                except KeyError:
+                    response['nutr_status'] = {
+                        'Calories': Decimal('0'),
+                        'Carbohydrate': Decimal('0'),
+                        'Protein': Decimal('0'),
+                        'Fat': Decimal('0')
+                    }
             else:
                 pass
         return response
