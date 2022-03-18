@@ -4,8 +4,7 @@ from pydantic import BaseModel, Field
 from decimal import Decimal
 from enum import Enum
 
-# from app_v2.repository.repository import UserRepository, LogRepository
-from ..repository.repository import UserRepository, LogRepository
+from app_v2.repository.repository import UserRepository, LogRepository
 
 class physique(BaseModel):
     birth: str= Field(...,example= "1995-04-04")
