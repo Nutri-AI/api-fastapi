@@ -83,6 +83,10 @@ class LogDomain():
     def post_meal_log(self, userid: str, image_key, food_list: list):
         return self.__repository.post_meal_log(userid, image_key, food_list)
 
+    #### update 식단 섭취 로그에서 식품 리스트 변경
+    def update_meal_log_food_list(self, userid:str, datetime, new_food_list:list):
+        return self.__repository.update_meal_log_food_list(userid, datetime, new_food_list)
+
     ####4 유저 식단 섭취 로그 정보 요청 - 특정 날
     def get_meal_log(self, userid: str, date):
         return self.__repository.get_meal_log(userid, date)
