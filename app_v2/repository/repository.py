@@ -570,7 +570,7 @@ class LogRepository:
                 'PK': f'USER#{userid}',
                 'SK': f'USER#{userid}#INFO'
             },
-            ProjectionExpression='RDI'
+            ProjectionExpression='username, RDI.Calories, RDI.Carbohydrate, RDI.Protein, RDI.Fat'
         ).get('Item')
         response['MEAL'] = list()
         for i, item in enumerate(response_nutr):
