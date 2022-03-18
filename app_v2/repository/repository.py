@@ -7,6 +7,8 @@ from decimal import ROUND_HALF_UP, ROUND_UP, Decimal
 import os
 import logging
 import requests
+import numpy as np
+import cv2
 
 from datetime import date, datetime, timedelta
 
@@ -247,19 +249,23 @@ class LogRepository:
         self.__db, self.__s3= db
         self.__table= self.__db.Table('nutriai_test')
 
-    ####1 이미지 S3에 업로드
-    def upload_image(self, userid: str, image):
-        s3= self.__s3
-        obj_path= os.path.basename(image.filename)
-        try: 
-            s3.Bucket('nutriai').upload_fileobj(image.file, f'{userid}/{obj_path}',
-                            ExtraArgs={'ACL': 'public-read','ContentType': image.content_type}
-                        ) 
-        except ClientError as e : logging.error(e)
-        #link= f'https://nutriai.s3.ap-northeast-2.amazonaws.com/{userid}/{obj_path}'
-        link= f'{userid}/{obj_path}'
-        return link
-        #detect_nutriai.main(link)
+    def use_base64file(self, userid: str, image):
+        # s3= self.__s3
+        # obj_path= os.path.basename(image.filename)
+        # try: 
+        #     s3.Bucket('nutriai').upload_fileobj(image.file, f'{userid}/{obj_path}',
+        #                     ExtraArgs={'ACL': 'public-read','ContentType': image.content_type}
+        #                 ) 
+        # except ClientError as e : logging.error(e)
+        # #link= f'https://nutriai.s3.ap-northeast-2.amazonaws.com/%7Buserid%7D/%7Bobj_path%7D'
+        # link= f'{userid}/{obj_path}'
+        # return link
+
+        img= np.fromstring(image, dtype= np.uint8)
+        dimg= cv2.imdecode(img, cv2.IMREAD_COLOR)
+        _img, _class = detect.main(dimg)
+        #return f"{type(image)}"
+        return _class
 
     #### post img
     def __get_presigned_post(client, bucket:str, key_name:str, fields=None, conditions=None, expiration=60):
