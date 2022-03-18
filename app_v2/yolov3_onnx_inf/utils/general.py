@@ -3,7 +3,6 @@
 General utils
 """
 
-import contextlib
 import glob
 import logging
 import math
@@ -15,15 +14,11 @@ import time
 import urllib
 from pathlib import Path
 from subprocess import check_output
-from zipfile import ZipFile
 
 import cv2
 import numpy as np
 import pandas as pd
 import pkg_resources as pkg
-# import torch
-# import torchvision
-import yaml
 
 from utils.metrics import box_iou
 

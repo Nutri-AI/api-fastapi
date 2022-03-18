@@ -12,7 +12,7 @@ import cv2
 
 from datetime import date, datetime, timedelta
 
-#from app_v2.yolov3_onnx_main import detect_nutriai
+from app_v2.yolov3_onnx_inf import detect
 
 total= {
     'Protein': 0, 'Fat': 0, 'Carbohydrate': 0, 'Dietary_Fiber': 0, 'Calcium': 0,
@@ -261,9 +261,9 @@ class LogRepository:
         # link= f'{userid}/{obj_path}'
         # return link
 
-        img= np.fromstring(image, dtype= np.uint8)
-        dimg= cv2.imdecode(img, cv2.IMREAD_COLOR)
-        _img, _class = detect.main(dimg)
+        # img= np.fromstring(image, dtype= np.uint8)
+        # dimg= cv2.imdecode(img, cv2.IMREAD_COLOR)
+        _img, _class = detect.main(image)
         #return f"{type(image)}"
         return _class
 

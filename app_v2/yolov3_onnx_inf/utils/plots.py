@@ -3,10 +3,7 @@
 Plotting utils
 """
 
-import math
 import os
-from copy import copy
-from pathlib import Path
 
 import cv2
 import matplotlib
@@ -49,18 +46,18 @@ colors = Colors()  # create instance for 'from utils.plots import colors'
 
 def check_font(font='Arial.ttf', size=20):
     # Return a PIL TrueType Font, downloading to CONFIG_DIR if necessary
-    font = Path(font)
-    font = font if font.exists() else (CONFIG_DIR / font.name)
-    try:
-        return ImageFont.truetype(str(font) if font.exists() else font.name, size)
-    except Exception as e:  # download if missing
-        url = "https://ultralytics.com/assets/" + font.name
-        print(f'Downloading {url} to {font}...')
-        torch.hub.download_url_to_file(url, str(font), progress=False)
-        try:
-            return ImageFont.truetype(str(font), size)
-        except TypeError:
-            check_requirements('Pillow>=8.4.0')  # known issue https://github.com/ultralytics/yolov5/issues/5374
+    font = ImageFont.load_default()
+    return font
+    # font = font if font.exists() else (CONFIG_DIR / font.name)
+    # try:
+    #     return ImageFont.truetype(str(font) if font.exists() else font.name, size)
+    # except Exception as e:  # download if missing
+    #     url = "https://ultralytics.com/assets/" + font.name
+    #     print(f'Downloading {url} to {font}...')
+    #     try:
+    #         return ImageFont.truetype(str(font), size)
+    #     except TypeError:
+    #         check_requirements('Pillow>=8.4.0')  # known issue https://github.com/ultralytics/yolov5/issues/5374
 
 
 class Annotator:

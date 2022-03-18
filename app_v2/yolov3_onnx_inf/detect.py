@@ -61,7 +61,7 @@ class DetectMultiBackend():
             #2022.03.02 edited by nhwh
             names = ["pork_belly","ramen","bibimbap","champon","cold_noodle","cutlassfish","egg_custard","egg_soup","jajangmyeon","kimchi_stew","multigrain_rice",
                      "oxtail_soup","pickled spianch","pizza","pork_feet","quail_egg_stew","seasoned_chicken","seaweed_soup","soy_bean_paste_soup","stewed_bean","stewed_lotus_stew",
-                     "stir_fried_anchovy","sitr_fried_pork","salad","ice_americano","Bottled_Beer","Canned_Beer","Draft_Beer","Fried_Chicken","Tteokbokki","Cabbage_Kimchi","Radish_Kimchi"]
+                     "stir_fried_anchovy","sitr_fried_pork","salad","ice_americano","Bottled_Beer","Canned_Beer","Draft_Beer","Fried_Chicken","Tteokbokki","Cabbage_Kimchi","Radish_Kimchi", "None"]
             #2022.03.02 edited by nhwh
             session = onnxruntime.InferenceSession(w, providers=['CUDAExecutionProvider','TensorrtExecutionProvider', 'CPUExecutionProvider'])
         self.__dict__.update(locals())  # assign all variables to self
@@ -101,8 +101,10 @@ def run(image,
         exist_ok=False,  # existing project/name ok, do not increment
         ):
     
-    #img = Image.open(BytesIO(image))
-    source = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    img = Image.open(BytesIO(image))
+    img= np.fromstring(image, dtype= np.uint8)
+    dimg= cv2.imdecode(img, cv2.IMREAD_COLOR)
+    source = cv2.cvtColor(dimg, cv2.COLOR_RGB2BGR)
     save_img = not nosave 
 
     # Load model
@@ -134,11 +136,13 @@ def run(image,
     # NMS
     pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
     dt[2] += time.time() - t3
-
+    
+        
     # Process predictions
     for i, det in enumerate(pred):  # per image
         seen += 1
         im0 = im0s.copy()
+        img_cls = []
 
         s += '%gx%g ' % im.shape[2:]  # print string
 #       gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
@@ -155,11 +159,11 @@ def run(image,
 
             # Write results
             for *xyxy, conf, cls in reversed(det):
-                c= -1
-                if save_img or save_crop or view_img:  # Add bbox to image
-                    c = int(cls)  # integer class
-                    label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                    annotator.box_label(xyxy, label, color=colors(c, True))
+                if save_img:  # Add bbox to image
+                    c_i = int(cls)
+                    img_cls.append(int(cls))   # integer class
+                    label = None if hide_labels else (names[c_i] if hide_conf else f'{names[c_i]} {conf:.2f}')
+                    annotator.box_label(xyxy, label, color=colors(c_i, True))
 
         # Print time (inference-only)
         LOGGER.info(f'{s}Done. ({t3 - t2:.3f}s)')
@@ -179,7 +183,7 @@ def run(image,
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
     LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
     #c = -1
-    return im0_byte, c
+    return im0_byte, img_cls
 
 def main(img_b):
     check_requirements(exclude=('tensorboard', 'thop'))

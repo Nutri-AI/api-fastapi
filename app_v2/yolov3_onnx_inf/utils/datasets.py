@@ -2,25 +2,12 @@
 """
 Dataloaders and dataset utils
 """
-
-import glob
-
 import os
 
-import time
-
-from multiprocessing.pool import Pool, ThreadPool
-from pathlib import Path
-from threading import Thread
-
-import cv2
 import numpy as np
 # import torch
 # import torch.nn.functional as F
 from PIL import ExifTags
-
-# from torch.utils.data import DataLoader, Dataset, dataloader, distributed
-from tqdm import tqdm
 
 from utils.augmentations import  letterbox
 from utils.general import (LOGGER, check_requirements, clean_str)
