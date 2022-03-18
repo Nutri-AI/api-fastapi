@@ -83,6 +83,10 @@ class LogDomain():
     def post_meal_log(self, userid: str, image_key, food_list: list):
         return self.__repository.post_meal_log(userid, image_key, food_list)
 
+    #### update 식단 로그, 음식 리스트만 수정
+    def update_meal_log_food_list(self, userid:str, dt, new_food_list:list):
+        return self.__repository.update_meal_log_food_list(userid, dt, new_food_list)
+
     ####4 유저 식단 섭취 로그 정보 요청 - 특정 날
     def get_meal_log(self, userid: str, date):
         return self.__repository.get_meal_log(userid, date)
@@ -146,6 +150,10 @@ class LogDomain():
     #### get 사용자 영양 상태 로그 - 오늘부터 n일 (영양제)
     def get_user_nutr_log_suppl_ndays(self, userid:str, ndays:int):
         return self.__repository.get_user_nutr_log_suppl_ndays(userid, ndays)
+
+    #### get today homepage
+    def get_user_today_homepage(self, userid: str):
+        return self.__repository.get_user_today_homepage(userid)
 
     ####1 유저 영양제 추천
     def recommend_nutrients(self, userid: str, request):
