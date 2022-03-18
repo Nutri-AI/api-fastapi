@@ -4,6 +4,8 @@ from app_v2.domain.domain import NutrientsName
 
 from app_v2.domain.domain import UserDomain, LogDomain, UserJoinModel, physique
 
+from app_v2.domain.domain import Base64Request, Base64Response
+
 class UserRouter:
     def __init__(self, domain: UserDomain):
         self.__domain= domain
@@ -78,10 +80,11 @@ class LogRouter:
     def router(self):
         api_router= APIRouter(prefix= '/log', tags= ['log'])
 
-        ####1 이미지 S3로 업로드
+        ####1 이미지 S3로 업로드 및 등등
         @api_router.post('/upload/image/{userid}')
-        def upload_image(userid: str, image: UploadFile= File(...)):
-            return self.__domain.upload_image(userid, image)
+        def use_base64file(userid: str, image: bytes= File(...)):
+            
+            return self.__domain.use_base64file(userid, image)
 
         ####2 음식 영양 성분 요청
         @api_router.get('/get/food/nutrients')
@@ -93,7 +96,7 @@ class LogRouter:
         def post_meal_log(userid: str, image_key, food_list):
             return self.__domain.post_meal_log(userid, image_key, food_list)
 
-        ####
+        #### update 식단 로그, 음식 리스트만 수정
         @api_router.put('/update/meal-log/food-list/{userid}')
         def update_meal_log_food_list(userid:str, dt, new_food_list:list):
             return self.__domain.update_meal_log_food_list(userid, dt, new_food_list)

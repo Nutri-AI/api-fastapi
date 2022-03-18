@@ -3,6 +3,7 @@ import re
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from enum import Enum
+import base64
 
 from app_v2.repository.repository import UserRepository, LogRepository
 
@@ -22,6 +23,13 @@ class NutrientsName(str, Enum):
     vitamins= ["vitamins"]
     multivitamin= ["multivitamin"]
     nothing= None
+
+class Base64Request(BaseModel):
+    base_file: str
+
+class Base64Response(BaseModel):
+    response_code: str
+    response_message: str
 
 class UserDomain():
     def __init__(self, repository: UserRepository):
@@ -68,11 +76,9 @@ class LogDomain():
         self.__repository= repository
 
     ####1 이미지 S3에 업로드
-    def upload_image(self, userid: str, image):
-        #onnx runtime 추론 -> image, class number 반환
-        #여기서 대분류(detail) 매핑
-        #detail= mapping[int]
-        return self.__repository.upload_image(userid, image)#, detail)
+    def use_base64file(self, userid: str, image):
+        
+        return self.__repository.use_base64file(userid, image)
 
     ####2 음식 영양 성분 정보 요청
     def get_food_nutrients(self, food_cat: str, food_name: str):
