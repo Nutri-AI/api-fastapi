@@ -92,11 +92,11 @@ class LogRouter:
         @api_router.post('/post/meal/log/{userid}')
         def post_meal_log(userid: str, image_key, food_list):
             return self.__domain.post_meal_log(userid, image_key, food_list)
-        
-        #### update 식단 섭취 로그에서 식단 변경
-        @api_router.get('/update/meal/{userid}')
-        def update_meal_log_food_list(self, userid:str, datetime, new_food_list:list):
-            return update_meal_log_food_list(userid, datetime, new_food_list)
+
+        ####
+        @api_router.put('/update/meal-log/food-list/{userid}')
+        def update_meal_log_food_list(userid:str, dt, new_food_list:list):
+            return self.__domain.update_meal_log_food_list(userid, dt, new_food_list)
 
         ####4 유저 식단 섭취 로그 정보 요청 - 특정 날
         @api_router.get('/get/meal/log/{userid}')
@@ -177,6 +177,10 @@ class LogRouter:
         @api_router.get('/get/nnutr-log-ndays')
         def get_user_nutr_log_suppl_ndays(userid:str, ndays:int):
             return self.__domain.get_user_nutr_log_suppl_ndays(userid, ndays)
+
+        @api_router.get('/today/homepage/{userid}')
+        def get_user_today_homepage(userid: str):
+            return self.__domain.get_user_today_homepage(userid)
 
         ####20 유저 영양제 추천
         @api_router.get('/recommend/nutrients/{userid}')
