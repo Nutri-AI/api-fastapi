@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, status, UploadFile, File
 
-from ..domain.domain import NutrientsName
+from app_v2.domain.domain import NutrientsName
 
-from ..domain.domain import UserDomain, LogDomain, UserJoinModel, physique
+from app_v2.domain.domain import UserDomain, LogDomain, UserJoinModel, physique
 
 class UserRouter:
     def __init__(self, domain: UserDomain):
@@ -92,6 +92,7 @@ class LogRouter:
         @api_router.post('/post/meal/log/{userid}')
         def post_meal_log(userid: str, image_key, food_list):
             return self.__domain.post_meal_log(userid, image_key, food_list)
+
         ####
         @api_router.put('/update/meal-log/food-list/{userid}')
         def update_meal_log_food_list(userid:str, dt, new_food_list:list):

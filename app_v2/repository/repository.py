@@ -573,7 +573,7 @@ class LogRepository:
             ProjectionExpression='RDI'
         ).get('Item')
         response['MEAL'] = list()
-        for i, item in enumerate(status):
+        for i, item in enumerate(response_nutr):
             if 'food_list' in item.keys():
                 response['MEAL'].append([item['SK'].replace('#MEAL#','T'), item['food_list']])
             elif item['status_type'] == 'MEAL':
