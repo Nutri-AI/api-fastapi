@@ -19,13 +19,13 @@ def initialize_db() -> ServiceResource:
         #  region_name= Config.DB_REGION_NAME,
         #  aws_access_key_id= Config.DB_ACCESS_KEY_ID,
         #  aws_secret_access_key= Config.DB_SECRET_ACCESS_KEY)
-          region_name='ap',
-          aws_access_key_id= 'x',
-          aws_secret_access_key= 'x')
+          region_name='ap-northeast-2',
+          aws_access_key_id= 'AKIA3HJWQVAIZQRFUYEW',
+          aws_secret_access_key= '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')
 
     s3= boto3.resource('s3',
-          region_name='ap',
-          aws_access_key_id= 'x',
-          aws_secret_access_key= 'x')
+          region_name='ap-northeast-2',
+          aws_access_key_id= 'AKIA3HJWQVAIZQRFUYEW',
+          aws_secret_access_key= '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')
 
     return dynamodb, s3
