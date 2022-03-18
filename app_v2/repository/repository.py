@@ -10,7 +10,7 @@ import logging
 
 from datetime import date, datetime, timedelta
 
-from app_v2.yolov3_onnx_main import detect_nutriai
+#from app_v2.yolov3_onnx_main import detect_nutriai
 
 total= {
     'Protein': 0, 'Fat': 0, 'Carbohydrate': 0, 'Dietary_Fiber': 0, 'Calcium': 0,
@@ -83,10 +83,10 @@ class UserRepository:
         else:
             pass
 
-        temp_rdi['Calories'] = Decimal(cal).quantize(Decimal('.1'), rounding=ROUND_HALF_UP)
-        temp_rdi['Carbohydrate'] = (Decimal('0.6')*Decimal(cal)/4).quantize(Decimal('.1'), rounding=ROUND_HALF_UP)
-        temp_rdi['Protein'] = (Decimal('0.17')*Decimal(cal)/4).quantize(Decimal('.1'), rounding=ROUND_HALF_UP)
-        temp_rdi['Fat'] = (Decimal('0.23')*Decimal(cal)/9).quantize(Decimal('.1'), rounding=ROUND_HALF_UP)
+        temp_rdi['Calories'] = Decimal(cal).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        temp_rdi['Carbohydrate'] = (Decimal('0.6')*Decimal(cal)/4).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        temp_rdi['Protein'] = (Decimal('0.17')*Decimal(cal)/4).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        temp_rdi['Fat'] = (Decimal('0.23')*Decimal(cal)/9).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         # temp_rdi['Calories'] = cal
         # temp_rdi['Carbohydrate'] = Decimal('0.6')*cal/4
         # temp_rdi['Protein'] = Decimal('0.17')*cal/4
@@ -570,14 +570,22 @@ class LogRepository:
                 'PK': f'USER#{userid}',
                 'SK': f'USER#{userid}#INFO'
             },
-            ProjectionExpression='RDI'
+            ProjectionExpression='username, RDI.Calories, RDI.Carbohydrate, RDI.Protein, RDI.Fat'
         ).get('Item')
         response['MEAL'] = list()
-        for i, item in enumerate(status):
+        for i, item in enumerate(response_nutr):
             if 'food_list' in item.keys():
                 response['MEAL'].append([item['SK'].replace('#MEAL#','T'), item['food_list']])
             elif item['status_type'] == 'MEAL':
-                response['nutr_status'] = item['nutr_status']
+                try:
+                    response['nutr_status'] = item['nutr_status']
+                except KeyError:
+                    response['nutr_status'] = {
+                        'Calories': Decimal('0'),
+                        'Carbohydrate': Decimal('0'),
+                        'Protein': Decimal('0'),
+                        'Fat': Decimal('0')
+                    }
             else:
                 pass
         return response
