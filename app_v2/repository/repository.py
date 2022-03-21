@@ -334,16 +334,21 @@ class LogRepository:
             url_response = requests.get(url)
 
         # get food list
-        response= self.__table.query(
-                        KeyConditionExpression= Key('PK').eq(f'FOOD#{fnames[_class]}'),
+        answer= []
+        for name in _class:
+            response= self.__table.query(
+                        KeyConditionExpression= Key('PK').eq(f'FOOD#{fnames[name]}'),
                         ProjectionExpression= 'SK'
-        )
-        
+            )
+            a= [i['SK'][5:] for i in response['Items']]
+            for i in a:
+                answer.append(i)
+
         return {'Origin_S3_key': origin_obj_name,
-                'Class_type': fnames[_class],
+                'Class_type': [fnames[name] for name in _class],
                 'S3_key': obj_name,
                 'link': url,
-                'food_list': [i['SK'][5:] for i in response['Items']]}
+                'food_list': answer}
     
     # s3 키 접속 권한
     def get_s3_url_file(self, userid: str, obj_name: str):
