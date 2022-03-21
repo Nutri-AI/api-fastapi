@@ -270,6 +270,21 @@ class LogRepository:
         # The response contains the presigned URL and required fields
         return response
 
+    #### S3 url 접속 권한
+    def create_presigned_url(self, bucket_name: str, key_name: str, expiration= 3600):
+        # Generate a presigned URL for the S3 object
+        try:
+            response= self.__s3.generate_presigned_url('get_object',
+                                                        Params={'Bucket': bucket_name,
+                                                                'Key': key_name},
+                                                        ExpiresIn= expiration)
+        except ClientError as e:
+            logging.errer(e)
+            return None
+        # The response contains the presigned URL
+        return response
+
+
     ####1 이미지 S3에 업로드
     def upload_image(self, userid: str, image):
         #return f"{type(image)}"
@@ -293,9 +308,13 @@ class LogRepository:
         # If successful, returns HTTP status code 204
         logging.info(f'File upload HTTP status code: {http_response.status_code}')
 
+        url = self.create_presigned_url('nutriai', obj_name)
+        if url is not None:
+            url_response = requests.get(url)
+
         return {'Origin_S3_key': origin_obj_name,
                 'Class_type': _class,
-                'S3_key': obj_name}
+                'S3_key_url': url_response}
         #return _class
 
     ######### FOOOD 
