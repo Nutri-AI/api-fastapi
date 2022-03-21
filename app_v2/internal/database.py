@@ -20,12 +20,11 @@ def initialize_db() -> ServiceResource:
         #  aws_access_key_id= Config.DB_ACCESS_KEY_ID,
         #  aws_secret_access_key= Config.DB_SECRET_ACCESS_KEY)
           region_name='ap-northeast-2',
-          aws_access_key_id= '',
+          aws_access_key_id= '-',
           aws_secret_access_key= '')
 
     s3= boto3.client('s3',
           region_name='ap-northeast-2',
           aws_access_key_id= '',
           aws_secret_access_key= '')
-
     return dynamodb, s3
