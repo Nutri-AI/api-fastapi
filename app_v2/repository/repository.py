@@ -282,7 +282,7 @@ class LogRepository:
         http_response= requests.post(o_response['url'], data= o_response['fields'], files= origin_files)
 
         # Inference
-        _img, _class = detect.main(dimg)
+        _img, _class = detect.main(image)
 
         obj_name= f'{userid}/{datetime.now().isoformat()}.jpeg'
         response= self.create_presigned_post('nutriai', obj_name)
