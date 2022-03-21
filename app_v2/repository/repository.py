@@ -344,7 +344,7 @@ class LogRepository:
             b= []
             for i in a:
                 b.append(i)
-            answer.append(i)
+            answer.append(b)
 
         return {'Origin_S3_key': origin_obj_name,
                 'Class_type': [fnames[name] for name in _class],
