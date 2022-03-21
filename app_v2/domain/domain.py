@@ -156,9 +156,13 @@ class LogDomain():
     def get_user_nutr_log_suppl_ndays(self, userid:str, ndays:int):
         return self.__repository.get_user_nutr_log_suppl_ndays(userid, ndays)
 
-    #### get today homepage
+    #### get today nutr status
     def get_user_today_status(self, userid: str):
         return self.__repository.get_user_today_status(userid)
+
+    #### get week nutr status
+    def get_user_week_status(self, userid: str):
+        return self.__repository.get_user_week_status(userid)
 
     ####1 유저 영양제 추천
     def recommend_nutrients(self, userid: str, request):

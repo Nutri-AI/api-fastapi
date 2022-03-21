@@ -499,7 +499,7 @@ class LogRepository:
 
     ####13 get 사용자 영양상태 로그 - 특정 날짜 (식단 + 영양제)
     # input : userID, date
-    # output : [{SK, nutr_status},{SK, nutr_status}]
+    # output : {SK, nutr_status}
     def get_user_nutr_log(self, userid:str, date) -> dict:
         response = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(f'{date}#NUTRSTATUS#'),
@@ -594,8 +594,9 @@ class LogRepository:
         return
 
 
-    # home page query
+    # today status query
     def get_user_today_status(self, userid:str):
+        # query (NUTRSTATUS#MEAL & #MEAL#)
         response_nutr = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(date.today().isoformat()),
             FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
@@ -619,3 +620,18 @@ class LogRepository:
                 pass
         return response
 
+
+    # 1 week status query
+    # output: {'username','RDI','nutr_status'}
+    def get_user_week_status(self, userid:str):
+        # query ( NUTRSTATUS )
+        response_nutr = self.get_user_nutr_log_ndays(userid, 7)
+        response = self.__table.get_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'USER#{userid}#INFO'
+            },
+            ProjectionExpression='username, RDI'
+        ).get('Item')
+        response['nutr_status'] = response_nutr
+        return response
