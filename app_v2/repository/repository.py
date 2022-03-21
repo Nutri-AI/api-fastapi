@@ -1,4 +1,5 @@
 from collections import Counter
+from urllib import response
 from boto3.resources.base import ServiceResource
 from botocore.exceptions import ClientError
 from fastapi.responses import JSONResponse
@@ -7,8 +8,9 @@ from decimal import ROUND_HALF_UP, ROUND_UP, Decimal
 import os
 import logging
 import requests
-import numpy as np
 import cv2
+import numpy as np
+import boto3
 
 from datetime import date, datetime, timedelta
 
@@ -249,67 +251,52 @@ class LogRepository:
         self.__db, self.__s3= db
         self.__table= self.__db.Table('nutriai_test')
 
-    def use_base64file(self, userid: str, image):
-        # s3= self.__s3
-        # obj_path= os.path.basename(image.filename)
-        # try: 
-        #     s3.Bucket('nutriai').upload_fileobj(image.file, f'{userid}/{obj_path}',
-        #                     ExtraArgs={'ACL': 'public-read','ContentType': image.content_type}
-        #                 ) 
-        # except ClientError as e : logging.error(e)
-        # #link= f'https://nutriai.s3.ap-northeast-2.amazonaws.com/%7Buserid%7D/%7Bobj_path%7D'
-        # link= f'{userid}/{obj_path}'
-        # return link
-
-        # img= np.fromstring(image, dtype= np.uint8)
-        # dimg= cv2.imdecode(img, cv2.IMREAD_COLOR)
-        _img, _class = detect.main(image)
-        #return f"{type(image)}"
-        return _class
-
-    #### post img
-    def __get_presigned_post(client, bucket:str, key_name:str, fields=None, conditions=None, expiration=60):
+    #### S3 저장 공간 생성? 
+    def create_presigned_post(self, bucket_name: str, key_name: str, 
+            fields= None,
+            conditions= None, expiration= 60):
+        
         try:
-            response = client.getnerate_presigned_post(
-                bucket_name = bucket,
-                object_name = key_name,
-                Fields=fields,
-                Conditions=conditions,
-                ExpiresIn=expiration
+            response = self.__s3.generate_presigned_post(
+                bucket_name,
+                key_name,
+                Fields= fields,
+                Conditions= conditions,
+                ExpiresIn= expiration
             )
         except ClientError as e:
             logging.error(e)
             return None
-        return response.get('url')
+        # The response contains the presigned URL and required fields
+        return response
 
-    def post_image(self, object_name:str):
-        response = self.__get_presigned_post(self.__s3, 'nutriai', object_name)
+    ####1 이미지 S3에 업로드
+    def upload_image(self, userid: str, image):
+        #return f"{type(image)}"
+        img= np.fromstring(image, dtype= np.uint8)
+        dimg= cv2.imdecode(img, cv2.IMREAD_COLOR)
+
+        origin_obj_name= f'{userid}/origin_{datetime.now().isoformat()}.jpeg'
+        o_response= self.create_presigned_post('nutriai', origin_obj_name)
+        origin_files= {'file': (origin_obj_name, dimg)}
+        http_response= requests.post(o_response['url'], data= o_response['fields'], files= origin_files)
+
+        # Inference
+        _img, _class = detect.main(dimg)
+
+        obj_name= f'{userid}/{datetime.now().isoformat()}.jpeg'
+        response= self.create_presigned_post('nutriai', obj_name)
         if response is None:
             exit(1)
-        # Demonstrate how another Python program can use the presigned URL to upload a file
-        with open(object_name, 'rb') as f:
-            files = {'file': (object_name, f)}
-            http_response = requests.post(response['url'], data=response['fields'], files=files)
+        files= {'file': (obj_name, _img)}
+        http_response= requests.post(response['url'], data= response['fields'], files= files)
         # If successful, returns HTTP status code 204
         logging.info(f'File upload HTTP status code: {http_response.status_code}')
 
-    # get presigned url
-    def get_img_url(client, bucket:str, key_name:str, expiration=600) -> str:
-        try:
-            response = client.generate_presigned_url(
-                'get_object',
-                Params={
-                    'Bucket': bucket,
-                    'Key':key_name
-                },
-                ExpiresIn=expiration
-            )
-        except ClientError as e:
-            logging.error(e)
-            return None
-        return response
-
-
+        return {'Origin_S3_key': origin_obj_name,
+                'Class_type': _class,
+                'S3_key': obj_name}
+        #return _class
 
     ######### FOOOD 
     ####2 음식 영양 성분 정보 요청
@@ -620,22 +607,14 @@ class LogRepository:
                 'PK': f'USER#{userid}',
                 'SK': f'USER#{userid}#INFO'
             },
-            ProjectionExpression='username, RDI.Calories, RDI.Carbohydrate, RDI.Protein, RDI.Fat'
+            ProjectionExpression='RDI'
         ).get('Item')
         response['MEAL'] = list()
         for i, item in enumerate(response_nutr):
             if 'food_list' in item.keys():
                 response['MEAL'].append([item['SK'].replace('#MEAL#','T'), item['food_list']])
             elif item['status_type'] == 'MEAL':
-                try:
-                    response['nutr_status'] = item['nutr_status']
-                except KeyError:
-                    response['nutr_status'] = {
-                        'Calories': Decimal('0'),
-                        'Carbohydrate': Decimal('0'),
-                        'Protein': Decimal('0'),
-                        'Fat': Decimal('0')
-                    }
+                response['nutr_status'] = item['nutr_status']
             else:
                 pass
         return response

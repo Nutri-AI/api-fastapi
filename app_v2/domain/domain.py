@@ -76,9 +76,9 @@ class LogDomain():
         self.__repository= repository
 
     ####1 이미지 S3에 업로드
-    def use_base64file(self, userid: str, image):
+    def upload_image(self, userid: str, image):
         
-        return self.__repository.use_base64file(userid, image)
+        return self.__repository.upload_image(userid, image)
 
     ####2 음식 영양 성분 정보 요청
     def get_food_nutrients(self, food_cat: str, food_name: str):

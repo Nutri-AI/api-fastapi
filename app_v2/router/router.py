@@ -82,9 +82,8 @@ class LogRouter:
 
         ####1 이미지 S3로 업로드 및 등등
         @api_router.post('/upload/image/{userid}')
-        def use_base64file(userid: str, image: bytes= File(...)):
-            
-            return self.__domain.use_base64file(userid, image)
+        def upload_image(userid: str, image: bytes= File(...)):
+            return self.__domain.upload_image(userid, image)
 
         ####2 음식 영양 성분 요청
         @api_router.get('/get/food/nutrients')
