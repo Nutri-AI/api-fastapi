@@ -11,6 +11,7 @@ import requests
 import cv2
 import numpy as np
 import boto3
+import json
 
 from datetime import date, datetime, timedelta
 
@@ -282,18 +283,19 @@ class LogRepository:
             logging.errer(e)
             return None
         # The response contains the presigned URL
+        print(response)
         return response
-
 
     ####1 이미지 S3에 업로드
     def upload_image(self, userid: str, image):
         #return f"{type(image)}"
         img= np.fromstring(image, dtype= np.uint8)
-        dimg= cv2.imdecode(img, cv2.IMREAD_COLOR)
+        dimg= cv2.imdecode(img, cv2.COLOR_RGB2BGR)
+        _, dimg_byte = cv2.imencode('.jpg', dimg)
 
         origin_obj_name= f'{userid}/origin_{datetime.now().isoformat()}.jpeg'
         o_response= self.create_presigned_post('nutriai', origin_obj_name)
-        origin_files= {'file': (origin_obj_name, dimg)}
+        origin_files= {'file': (origin_obj_name, dimg_byte)}
         http_response= requests.post(o_response['url'], data= o_response['fields'], files= origin_files)
 
         # Inference
@@ -308,14 +310,20 @@ class LogRepository:
         # If successful, returns HTTP status code 204
         logging.info(f'File upload HTTP status code: {http_response.status_code}')
 
-        url = self.create_presigned_url('nutriai', obj_name)
-        if url is not None:
-            url_response = requests.get(url)
-
         return {'Origin_S3_key': origin_obj_name,
                 'Class_type': _class,
-                'S3_key_url': url_response}
-        #return _class
+                'S3_key': obj_name}
+    
+    # s3 키 접속 권한
+    def get_s3_url_file(self, userid: str, obj_name: str):
+        url = self.create_presigned_url('nutriai', obj_name)
+        if url is not None:
+            response = requests.get(url)
+        
+        print(response)
+        return url
+
+
 
     ######### FOOOD 
     ####2 음식 영양 성분 정보 요청
@@ -614,12 +622,12 @@ class LogRepository:
 
 
     # home page query
-    def get_user_today_status(self, userid:str):
+    def get_user_today_homepage(self, userid:str):
         response_nutr = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(date.today().isoformat()),
             FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
             ExpressionAttributeNames={'#ns': 'nutr_status'},
-            ProjectionExpression='SK, status_type, food_list, #ns' # .Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
+            ProjectionExpression='SK, status_type, food_list, #ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
         ).get('Items')
         response = self.__table.get_item(
             Key={

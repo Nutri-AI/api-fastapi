@@ -77,8 +77,10 @@ class LogDomain():
 
     ####1 이미지 S3에 업로드
     def upload_image(self, userid: str, image):
-        
         return self.__repository.upload_image(userid, image)
+
+    def get_s3_url_file(self, userid: str, obj_name: str):
+        return self.__repository.get_s3_url_file(userid, obj_name)
 
     ####2 음식 영양 성분 정보 요청
     def get_food_nutrients(self, food_cat: str, food_name: str):
@@ -157,8 +159,8 @@ class LogDomain():
         return self.__repository.get_user_nutr_log_suppl_ndays(userid, ndays)
 
     #### get today homepage
-    def get_user_today_status(self, userid: str):
-        return self.__repository.get_user_today_status(userid)
+    def get_user_today_homepage(self, userid: str):
+        return self.__repository.get_user_today_homepage(userid)
 
     ####1 유저 영양제 추천
     def recommend_nutrients(self, userid: str, request):

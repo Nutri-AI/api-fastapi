@@ -85,6 +85,10 @@ class LogRouter:
         def upload_image(userid: str, image: bytes= File(...)):
             return self.__domain.upload_image(userid, image)
 
+        @api_router.get('/get/s3-url')
+        def get_s3_url_file(userid: str, obj_name: str):
+            return self.__domain.get_s3_url_file(userid, obj_name)
+
         ####2 음식 영양 성분 요청
         @api_router.get('/get/food/nutrients')
         def get_food_nutrients(food_cat: str, food_name: str):
@@ -182,7 +186,7 @@ class LogRouter:
 
         @api_router.get('/today/homepage/{userid}')
         def get_user_today_homepage(userid: str):
-            return self.__domain.get_user_today_status(userid)
+            return self.__domain.get_user_today_homepage(userid)
 
         ####20 유저 영양제 추천
         @api_router.get('/recommend/nutrients/{userid}')
