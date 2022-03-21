@@ -11,6 +11,8 @@ import requests
 import cv2
 import numpy as np
 import boto3
+import json
+import re
 
 from datetime import date, datetime, timedelta
 
@@ -21,9 +23,24 @@ total= {
     'Iron': 0, 'Magnesium': 0, 'Phosphorus': 0, 'Potassium': 0, 'Sodium': 0, 'Zinc': 0,
     'Copper': 0, 'Manganese': 0, 'Selenium': 0, 'Vitamin_A': 0, 'Vitamin_D': 0, 'Niacin': 0,
     'Folic_acid': 0, 'Vitamin_B12': 0, 'Vitamin_B6': 0, 'Vitamin_C': 0, 'Vitamin_E': 0,
-    'Vitamin_K': 0, 'Leucine': 0, 'Iso_Leucine': 0, 'Histidine': 0, 'Linoleic_Acid': 0, 'Alpha_Linolenic_Acid': 0, 'Lysine': 0, 'Methionine': 0, 'Phenylalanine+Tyrosine': 0,
+    'Vitamin_K': 0, 'Leucine': 0, 'Iso_Leucine': 0, 'Histidine': 0, 'Linoleic_Acid': 0, 
+    'Alpha_Linolenic_Acid': 0, 'Lysine': 0, 'Methionine': 0, 'Phenylalanine+Tyrosine': 0,
     'Threonine': 0, 'Valine': 0, 'Cholesterol': 0
     }
+
+# fnames = ["pork_belly","ramen","bibimbap","champon","cold_noodle","cutlassfish","egg_custard",
+#         "egg_soup","jajangmyeon","kimchi_stew","multigrain_rice",
+#         "oxtail_soup","pickled spianch","pizza","pork_feet","quail_egg_stew","seasoned_chicken",
+#         "seaweed_soup","soy_bean_paste_soup","stewed_bean","stewed_lotus_stew",
+#         "stir_fried_anchovy","sitr_fried_pork","salad","ice_americano","Bottled_Beer","Canned_Beer",
+#         "Draft_Beer","Fried_Chicken","Tteokbokki","Cabbage_Kimchi","Radish_Kimchi", "No_detect"]
+
+fnames = ["삼겹살","라면","비빔밥","짬뽕","냉면","갈치조림","계란찜",
+        "계란국","짜장면","김치찌개","잡곡밥",
+        "설렁탕","시금치무침","피자","족발","메추리알장조림","양념치킨",
+        "미역국","된장찌개","콩자반","연근조림",
+        "멸치볶음","제육볶음","샐러드","아메리카노","병맥주","캔맥주",
+        "생맥주","후라이드치킨","떡볶이","배추김치","깍두기", "No_detect"]
 
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
@@ -270,33 +287,79 @@ class LogRepository:
         # The response contains the presigned URL and required fields
         return response
 
+    #### S3 url 접속 권한
+    def create_presigned_url(self, bucket_name: str, key_name: str, expiration= 3600):
+        # Generate a presigned URL for the S3 object
+        try:
+            response= self.__s3.generate_presigned_url('get_object',
+                                                        Params={'Bucket': bucket_name,
+                                                                'Key': key_name},
+                                                        ExpiresIn= expiration)
+        except ClientError as e:
+            logging.errer(e)
+            return None
+        # The response contains the presigned URL
+        print(response)
+        return response
+
     ####1 이미지 S3에 업로드
     def upload_image(self, userid: str, image):
         #return f"{type(image)}"
         img= np.fromstring(image, dtype= np.uint8)
-        dimg= cv2.imdecode(img, cv2.IMREAD_COLOR)
+        dimg= cv2.imdecode(img, cv2.COLOR_RGB2BGR)
+        _, dimg_byte = cv2.imencode('.jpg', dimg)
 
         origin_obj_name= f'{userid}/origin_{datetime.now().isoformat()}.jpeg'
-        o_response= self.create_presigned_post('nutriai', origin_obj_name)
-        origin_files= {'file': (origin_obj_name, dimg)}
-        http_response= requests.post(o_response['url'], data= o_response['fields'], files= origin_files)
+        origin_response= self.create_presigned_post('nutriai', origin_obj_name)
+        if origin_response is None:
+            exit(1)
+        origin_files= {'file': (origin_obj_name, dimg_byte)}
+        http_response= requests.post(origin_response['url'], data= origin_response['fields'], files= origin_files)
 
         # Inference
         _img, _class = detect.main(image)
 
         obj_name= f'{userid}/{datetime.now().isoformat()}.jpeg'
-        response= self.create_presigned_post('nutriai', obj_name)
-        if response is None:
+        infer_response= self.create_presigned_post('nutriai', obj_name)
+        if infer_response is None:
             exit(1)
         files= {'file': (obj_name, _img)}
-        http_response= requests.post(response['url'], data= response['fields'], files= files)
+        http_response= requests.post(infer_response['url'], data= infer_response['fields'], files= files)
         # If successful, returns HTTP status code 204
         logging.info(f'File upload HTTP status code: {http_response.status_code}')
 
+        # url link
+        url = self.create_presigned_url('nutriai', obj_name)
+        if url is not None:
+            url_response = requests.get(url)
+
+        # get food list
+        answer= []
+        for name in _class:
+            response= self.__table.query(
+                        KeyConditionExpression= Key('PK').eq(f'FOOD#{fnames[name]}'),
+                        ProjectionExpression= 'SK'
+            )
+            a= [i['SK'][5:] for i in response['Items']]
+            b= []
+            for i in a:
+                b.append(i)
+            answer.append(b)
+
         return {'Origin_S3_key': origin_obj_name,
-                'Class_type': _class,
-                'S3_key': obj_name}
-        #return _class
+                'Class_type': [fnames[name] for name in _class],
+                'S3_key': obj_name,
+                'link': url,
+                'food_list': answer}
+    
+    # s3 키 접속 권한
+    def get_s3_url_file(self, userid: str, obj_name: str):
+        url = self.create_presigned_url('nutriai', obj_name)
+        if url is not None:
+            response = requests.get(url)
+        
+        print(response)
+        return url
 
     ######### FOOOD 
     ####2 음식 영양 성분 정보 요청
@@ -597,11 +660,12 @@ class LogRepository:
     # today status query
     def get_user_today_status(self, userid:str):
         # query (NUTRSTATUS#MEAL & #MEAL#)
+
         response_nutr = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(date.today().isoformat()),
             FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
             ExpressionAttributeNames={'#ns': 'nutr_status'},
-            ProjectionExpression='SK, status_type, food_list, #ns' # .Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
+            ProjectionExpression='SK, status_type, food_list, #ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
         ).get('Items')
         response = self.__table.get_item(
             Key={
