@@ -341,8 +341,10 @@ class LogRepository:
                         ProjectionExpression= 'SK'
             )
             a= [i['SK'][5:] for i in response['Items']]
+            b= []
             for i in a:
-                answer.append(i)
+                b.append(i)
+            answer.append(i)
 
         return {'Origin_S3_key': origin_obj_name,
                 'Class_type': [fnames[name] for name in _class],
