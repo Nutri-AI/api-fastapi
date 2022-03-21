@@ -85,7 +85,7 @@ class LogRouter:
         def upload_image(userid: str, image: bytes= File(...)):
             return self.__domain.upload_image(userid, image)
 
-        @api_router.get('/get/s3-url/{userid}')
+        @api_router.get('/get/s3-url')
         def get_s3_url_file(userid: str, obj_name: str):
             return self.__domain.get_s3_url_file(userid, obj_name)
 
