@@ -310,9 +310,16 @@ class LogRepository:
         # If successful, returns HTTP status code 204
         logging.info(f'File upload HTTP status code: {http_response.status_code}')
 
+        # url link
+        url = self.create_presigned_url('nutriai', obj_name)
+        if url is not None:
+            response = requests.get(url)
+        
+        print(response)
         return {'Origin_S3_key': origin_obj_name,
                 'Class_type': _class,
-                'S3_key': obj_name}
+                'S3_key': obj_name,
+                'link': url}
     
     # s3 키 접속 권한
     def get_s3_url_file(self, userid: str, obj_name: str):
