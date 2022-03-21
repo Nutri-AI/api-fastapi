@@ -7,7 +7,7 @@ sudo docker run -v /home/nicole/nutriai/api-fastapi:/workspace -p 8000:8000 --rm
 
 
 
-(base) nicole@nicole-TFG5076XG:~/nutriai/api-fastapi$ sudo docker run --rm -p 8000:8000 -v $(pwd):/workspace -it test:local bash
+(base) nicole@nicole-TFG5076XG:~/nutriai/api-fastapi$ sudo docker run --rm -p 8000:8000 -v $(pwd):/workspace -it api_test:testOne bash
 root@adedaa1b81eb:/# cd workspace
 root@adedaa1b81eb:/workspace# uvicorn app_v2.main:app --reload --host=0.0.0.0
 INFO:     Will watch for changes in these directories: ['/workspace']

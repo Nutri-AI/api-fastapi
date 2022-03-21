@@ -9,8 +9,6 @@ import cv2
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sn
 from PIL import Image, ImageDraw, ImageFont
 
 from utils.general import (check_requirements, clip_coords, increment_path, is_ascii,
