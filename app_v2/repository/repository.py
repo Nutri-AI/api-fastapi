@@ -595,12 +595,12 @@ class LogRepository:
 
 
     # home page query
-    def get_user_today_homepage(self, userid:str):
+    def get_user_today_status(self, userid:str):
         response_nutr = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(date.today().isoformat()),
             FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
             ExpressionAttributeNames={'#ns': 'nutr_status'},
-            ProjectionExpression='SK, status_type, food_list, #ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
+            ProjectionExpression='SK, status_type, food_list, #ns' # .Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
         ).get('Items')
         response = self.__table.get_item(
             Key={
