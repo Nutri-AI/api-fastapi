@@ -185,8 +185,13 @@ class LogRouter:
             return self.__domain.get_user_nutr_log_suppl_ndays(userid, ndays)
 
         @api_router.get('/today/homepage/{userid}')
-        def get_user_today_homepage(userid: str):
-            return self.__domain.get_user_today_homepage(userid)
+        def get_user_today_status(userid: str):
+            return self.__domain.get_user_today_status(userid)
+        
+        @api_router.get('/week/status/{userid}')
+        def get_user_week_status(userid:str):
+            return self.__domain.get_user_week_status(userid)
+
 
         ####20 유저 영양제 추천
         @api_router.get('/recommend/nutrients/{userid}')
