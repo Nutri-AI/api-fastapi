@@ -23,14 +23,7 @@ class NutrientsName(str, Enum):
     vitamins= ["vitamins"]
     multivitamin= ["multivitamin"]
     nothing= None
-
-class Base64Request(BaseModel):
-    base_file: str
-
-class Base64Response(BaseModel):
-    response_code: str
-    response_message: str
-
+    
 class UserDomain():
     def __init__(self, repository: UserRepository):
         self.__repository= repository   
@@ -87,8 +80,8 @@ class LogDomain():
         return self.__repository.get_food_nutrients(food_cat, food_name)
 
     ####3 유저 식단 섭취 로그 등록
-    def post_meal_log(self, userid: str, image_key, food_list: list):
-        return self.__repository.post_meal_log(userid, image_key, food_list)
+    def post_meal_log(self, userid: str, image_key, class_list:list, food_list: list):
+        return self.__repository.post_meal_log(userid, image_key, class_list, food_list)
 
     #### update 식단 로그, 음식 리스트만 수정
     def update_meal_log_food_list(self, userid:str, dt, new_food_list:list):
