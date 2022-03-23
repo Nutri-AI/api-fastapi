@@ -34,8 +34,8 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # get relative path
 
 # from models.common import DetectMultiBackend
 from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages 
-from utils.general import (LOGGER, check_img_size, check_requirements, colorstr, check_suffix,
-                           non_max_suppression, scale_coords, xyxy2xywh)
+from utils.general import (LOGGER, check_img_size, colorstr, check_suffix,
+                           non_max_suppression, scale_coords, xyxy2xywh)#check_requirements
 from utils.plots import Annotator, save_one_box, colors
 # from utils.torch_utils import select_device
 #from utils.s3 import get_img
@@ -57,7 +57,7 @@ class DetectMultiBackend():
 
         if onnx:  # ONNX Runtime
             LOGGER.info(f'Loading {w} for ONNX Runtime inference...')
-            check_requirements(('onnx', 'onnxruntime-gpu' if onnxruntime.get_device()=='GPU' else 'onnxruntime'))
+            #check_requirements(('onnx', 'onnxruntime-gpu' if onnxruntime.get_device()=='GPU' else 'onnxruntime'))
             #2022.03.02 edited by nhwh
             names = ["pork_belly","ramen","bibimbap","champon","cold_noodle","cutlassfish","egg_custard","egg_soup","jajangmyeon","kimchi_stew","multigrain_rice",
                      "oxtail_soup","pickled spianch","pizza","pork_feet","quail_egg_stew","seasoned_chicken","seaweed_soup","soy_bean_paste_soup","stewed_bean","stewed_lotus_stew",
@@ -186,7 +186,7 @@ def run(image,
     return im0_byte, img_cls
 
 def main(img_b):
-    check_requirements(exclude=('tensorboard', 'thop'))
+    #check_requirements(exclude=('tensorboard', 'thop'))
     return run(image = img_b)
 
 # if __name__ == '__main__':
