@@ -1,0 +1,5 @@
+# fastapi git ignore file
+
+app_v2/internal/database.py
+
+
