@@ -24,13 +24,6 @@ class NutrientsName(str, Enum):
     multivitamin= ["multivitamin"]
     nothing= None
 
-class Base64Request(BaseModel):
-    base_file: str
-
-class Base64Response(BaseModel):
-    response_code: str
-    response_message: str
-
 class UserDomain():
     def __init__(self, repository: UserRepository):
         self.__repository= repository   
