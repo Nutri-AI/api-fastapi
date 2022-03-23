@@ -394,7 +394,7 @@ class LogRepository:
             }
         )
         for c, f in zip(class_list, food_list):
-            nutr = nutr.append(self.get_food_nutrients(c, f))
+            nutr = self.get_food_nutrients(c, f)
             self.update_user_meal_nutr_log(userid, nutr)
         return None ####
 
@@ -665,12 +665,11 @@ class LogRepository:
     # today status query
     def get_user_today_status(self, userid:str):
         # query (NUTRSTATUS#MEAL & #MEAL#)
-
         response_nutr = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(date.today().isoformat()),
             FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
             ExpressionAttributeNames={'#ns': 'nutr_status'},
-            ProjectionExpression='SK, status_type, food_list, #ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
+            ProjectionExpression='SK, status_type, food_list, #ns' # .Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
         ).get('Items')
         response = self.__table.get_item(
             Key={
