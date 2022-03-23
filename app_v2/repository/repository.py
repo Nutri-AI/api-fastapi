@@ -35,8 +35,8 @@ total= {
 #         "stir_fried_anchovy","sitr_fried_pork","salad","ice_americano","Bottled_Beer","Canned_Beer",
 #         "Draft_Beer","Fried_Chicken","Tteokbokki","Cabbage_Kimchi","Radish_Kimchi", "No_detect"]
 
-fnames = ["삼겹살구이","라면","비빔밥","짬뽕","냉면","갈치조림","계란찜",
-        "계란국","짜장면","김치찌개","잡곡밥",
+fnames = ["삼겹살구이","라면","비빔밥","짬뽕","냉면","갈치조림","달걀찜",
+        "달걀국","짜장면","김치찌개","잡곡밥",
         "설렁탕","시금치무침","피자","족발","메추리알장조림","양념치킨",
         "미역국","된장찌개","콩자반","연근조림",
         "멸치볶음","제육볶음","샐러드","아메리카노","맥주","맥주",
@@ -371,21 +371,21 @@ class LogRepository:
                 'SK': f'FOOD#{food_name}'
             },
             ProjectionExpression='nutrients'
-        )
-        nutr_info= response
-        for i in total.keys():
-            if i in nutr_info.keys():
-                total[i]= round(float(nutr_info[i]), 1)
-            else:
-                total[i]= 0
-        return total
+        ).get('Item').get('nutrients')
+        # nutr_info= response
+        # for i in total.keys():
+        #     if i in nutr_info.keys():
+        #         total[i]= round(float(nutr_info[i]), 1)
+        #     else:
+        #         total[i]= 0
+        return response
 
     ####### MEAL log ##########
     ####3 유저 식단 섭취 로그 등록 ##
     ###########################
-    def post_meal_log(self, userid:str, image_key:str, class_list, food_list):
+    def s(self, userid:str, image_key:str, class_list:list, food_list:list):
         dt = datetime.now()
-        response = self.__table.put_item(
+        response_put = self.__table.put_item(
             Item={
                 'PK': f'USER#{userid}',
                 'SK': f'{dt.date().isoformat()}#MEAL#{dt.time().isoformat()}',
@@ -393,10 +393,15 @@ class LogRepository:
                 'food_list': food_list
             }
         )
+        response_nutr = Counter(total)
         for c, f in zip(class_list, food_list):
             nutr = self.get_food_nutrients(c, f)
-            self.update_user_meal_nutr_log(userid, nutr)
-        return None ####
+            response_nutr += Counter(nutr)
+            response_status = self.update_user_meal_nutr_log(userid, nutr)
+        for i in response_nutr.keys():
+            response_nutr[i] = round(float(response_nutr[i]), 1)
+        response = {'nutrients': response_nutr}
+        return response
 
     # update 식단 로그, 음식 리스트만 수정
     # input : userID, datetime(isoformat), new food list
