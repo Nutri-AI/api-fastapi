@@ -35,12 +35,12 @@ total= {
 #         "stir_fried_anchovy","sitr_fried_pork","salad","ice_americano","Bottled_Beer","Canned_Beer",
 #         "Draft_Beer","Fried_Chicken","Tteokbokki","Cabbage_Kimchi","Radish_Kimchi", "No_detect"]
 
-fnames = ["삼겹살","라면","비빔밥","짬뽕","냉면","갈치조림","계란찜",
+fnames = ["삼겹살구이","라면","비빔밥","짬뽕","냉면","갈치조림","계란찜",
         "계란국","짜장면","김치찌개","잡곡밥",
         "설렁탕","시금치무침","피자","족발","메추리알장조림","양념치킨",
         "미역국","된장찌개","콩자반","연근조림",
-        "멸치볶음","제육볶음","샐러드","아메리카노","병맥주","캔맥주",
-        "생맥주","후라이드치킨","떡볶이","배추김치","깍두기", "No_detect"]
+        "멸치볶음","제육볶음","샐러드","아메리카노","맥주","맥주",
+        "맥주","후라이드치킨","떡볶이","배추김치","깍두기", "No_detect"]
 
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
