@@ -511,14 +511,16 @@ class LogRepository:
 ##################
     ####11 유저 영양 상태 식단 로그 입력 & 업데이트
     def update_user_meal_nutr_log(self, userid:str, food_nutrients:dict):
-        old_status = self.__table.get_item(
-            Key={
-                'PK': f'USER#{userid}',
-                'SK': f'{date.today()}#NUTRSTATUS#MEAL'
-            }
-        ).get('Item').get('nutr_status')
+        try:
+            old_status = self.__table.get_item(
+                Key={
+                    'PK': f'USER#{userid}',
+                    'SK': f'{date.today()}#NUTRSTATUS#MEAL'
+                }
+            ).get('Item').get('nutr_status')
+        except:
+            old_status = dict()
         new_status = Counter(old_status) + Counter(food_nutrients)
-
         response = self.__table.update_item(
             Key={
                 'PK': f'USER#{userid}',
@@ -539,14 +541,16 @@ class LogRepository:
 
     ####12 유저 영샹 상태 영양제 로그 입력 & 업데이트
     def update_user_nutrtake_nutr_log(self, userid:str, suppl_nutrients:dict):
-        old_status = self.__table.get_item(
-            Key={
-                'PK': f'USER#{userid}',
-                'SK': f'{date.today()}#NUTRSTATUS#SUPPLTAKE'
-            }
-        ).get('Item').get('nutr_status')
+        try:
+            old_status = self.__table.get_item(
+                Key={
+                    'PK': f'USER#{userid}',
+                    'SK': f'{date.today()}#NUTRSTATUS#SUPPLTAKE'
+                }
+            ).get('Item').get('nutr_status')
+        except:
+            old_status = dict()
         new_status = Counter(old_status) + Counter(suppl_nutrients)
-
         response = self.__table.update_item(
             Key={
                 'PK': f'USER#{userid}',
