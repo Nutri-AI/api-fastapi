@@ -193,8 +193,8 @@ class LogRouter:
 
         ####20 유저 영양제 추천
         @api_router.get('/recommend/nutrients/{userid}')
-        def recommend_nutrients(userid: str, request):
+        def recommend_nutrients(userid: str):
             # request는 부족 영양소?
-            return self.__domain.recommend_nutrients(userid, request)
+            return self.__domain.recommend_nutrients(userid)
 
         return api_router

@@ -13,6 +13,8 @@ import numpy as np
 import boto3
 import json
 import re
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
 
 from datetime import date, datetime, timedelta
 
@@ -525,7 +527,7 @@ class LogRepository:
                 }
             ).get('Item').get('nutr_status')
         except:
-            old_status = dict()
+            old_status = total
         new_status = Counter(old_status) + Counter(food_nutrients)
         response = self.__table.update_item(
             Key={
@@ -555,7 +557,7 @@ class LogRepository:
                 }
             ).get('Item').get('nutr_status')
         except:
-            old_status = dict()
+            old_status = total
         new_status = Counter(old_status) + Counter(suppl_nutrients)
         response = self.__table.update_item(
             Key={
@@ -666,11 +668,6 @@ class LogRepository:
             result += Counter(response[i].get('nutr_status'))
         return dict(result)
 
-    ####20 유저 영양제 추천
-    def recommend_nutrients(self, userid: str, request):
-        #부족 영양소로 db 영양제 정보에 어떻게 접근??
-        return
-
 
     # today status query
     def get_user_today_status(self, userid:str):
@@ -713,4 +710,73 @@ class LogRepository:
             ProjectionExpression='username, RDI'
         ).get('Item')
         response['nutr_status'] = response_nutr
+        return response
+
+
+    ####### NUTR SUPPL
+    # get 영양제 정보
+    def get_nutr_suppl(self, nutr_cat:str, product_code:str):
+        response = self.__table.get_item(
+            Key={
+                'PK': f'NUTRSUPPL#{nutr_cat}',
+                'SK': f'NUTRSUPPL#{product_code}'
+            }
+        )
+        return response.get('Item')
+
+    ### 유저 영양제 추천
+    def get_recomm_nutrsuppl(self, userid: str):
+        # user rdi data
+        user_rdi = self.__table.get_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'USER#{userid}#INFO'
+            },
+            ProjectionExpression='RDI'
+        ).get('Item').get('RDI')
+        user_rdi_sr = pd.Series(user_rdi, dtype=float).drop(['Calories', 'Folic_acid', 'Carbohydrate', 'Protein', 'Fat'])
+        # user week status
+        user_status = self.get_user_nutr_log_ndays(userid, 7)
+        user_status_sr = pd.Series(user_status, dtype=float).drop(['Calories', 'Folic_acid', 'Carbohydrate', 'Protein', 'Fat', 'Cholesterol'])
+        # diff rat
+        user_diffrat = pd.Series(((user_rdi_sr - user_status_sr) / user_rdi_sr) / 100., dtype=float)
+        user_diffrat.fillna(0, inplace=True)
+        # standard columns
+        std_col = user_diffrat.index
+
+        # nutrition supplements data
+        response = dict()
+        nutrsuppl_cat = ['amino-acids','minerals','vitamins']
+        for cat in nutrsuppl_cat:
+            suppl_list = self.__table.query(
+                KeyConditionExpression=Key('PK').eq(f'NUTRSUPPL#{cat}'),
+                ProjectionExpression='SK, nutrients'
+            ).get('Items')
+
+            temp_list = list()
+            for suppl in suppl_list:
+                suppl['nutrients']['prod_cd'] = suppl.pop('SK').replace('NUTRSUPPL#','')
+                temp_list.append(suppl['nutrients'])
+            suppl_df = pd.DataFrame(pd.DataFrame(temp_list).set_index('prod_cd'), columns=std_col, dtype=float).fillna(0)
+            suppl_rat_df = (suppl_df/user_rdi_sr) / 100.
+
+            if cat in ['amino-acids','minerals']:
+                suppl_sse = suppl_rat_df.apply(lambda row : np.sum((row - user_diffrat)**2), axis=1)
+                prod_code = list(suppl_sse.sort_values().index[0:3])
+                print(prod_code)
+                supp_pd_list = list()
+                for cd in prod_code:
+                    supp_pd_list.append(self.get_nutr_suppl(cat, cd))
+                response[cat] = supp_pd_list
+            elif cat == 'vitamins':
+                test_cosim_df = suppl_rat_df.append(user_diffrat).fillna(0)
+                test_cosim_df['cosim'] = cosine_similarity(test_cosim_df,test_cosim_df)[:,-1]
+                prod_code = list(test_cosim_df.sort_values(by='cosim', ascending=False).index[1:4])
+                supp_pd_list = list()
+                print(prod_code)
+                for cd in prod_code:
+                    supp_pd_list.append(self.get_nutr_suppl(cat, cd))
+                response[cat] = supp_pd_list
+            else:
+                pass
         return response
