@@ -28,6 +28,10 @@ total= {
     'Threonine': 0, 'Valine': 0, 'Cholesterol': 0, 'Calories': 0
     }
 
+pcf_status= {
+    'Protein': 0, 'Fat': 0, 'Calories': 0
+    }
+
 # fnames = ["pork_belly","ramen","bibimbap","champon","cold_noodle","cutlassfish","egg_custard",
 #         "egg_soup","jajangmyeon","kimchi_stew","multigrain_rice",
 #         "oxtail_soup","pickled spianch","pizza","pork_feet","quail_egg_stew","seasoned_chicken",
@@ -219,7 +223,7 @@ class UserRepository:
             },
             ProjectionExpression='RDI'
         )
-        return {i:int(v) for i,v in response.get('Item').get('RDI').items()}
+        return {i:round(float(v), 1) for i,v in response.get('Item').get('RDI').items()}
 
     ####7 nutr_suppl 수정 - 영양제 추가 등록 및 수정
     # input: userid, nutr_suppl(prod_code 만 있는 리스트)
@@ -376,9 +380,12 @@ class LogRepository:
         res= total
         for i in res.keys():
             if i in response.keys():
-                res[i]= Decimal(str(int(response[i])))
+                res[i]= Decimal(str(round(float(response[i]), 1)))
             else:
                 res[i]= Decimal('0')
+        for j in pcf_status.keys():
+            if j in response.keys():
+                res[i]= Decimal(str(int(response[i])))
         return res
 
     ####### MEAL log ##########
@@ -399,9 +406,14 @@ class LogRepository:
             nutr = self.get_food_nutrients(c, f)
             response_nutr += Counter(nutr)
             response_status = self.update_user_meal_nutr_log(userid, nutr)
+        
         for i in response_nutr.keys():
-            response_nutr[i] = int(response_nutr[i])
-        response = {'nutrients': response_nutr}
+            if i in pcf_status.keys():
+                response_nutr[i]= int(response_nutr[i])    
+            else:    
+                response_nutr[i]= round(float(response_nutr[i]), 1)
+        response= {'nutrients': response_nutr}
+        # 음식 영양 성분
         return response
 
     # update 식단 로그, 음식 리스트만 수정
