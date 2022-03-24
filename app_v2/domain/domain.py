@@ -173,5 +173,5 @@ class LogDomain():
         return self.__repository.get_user_week_status(userid)
 
     ####1 유저 영양제 추천
-    def recommend_nutrients(self, userid: str, request):
-        return self.__repository.recommend_nutriendts(userid, request)
+    def get_recomm_nutrsuppl(self, userid: str):
+        return self.__repository.get_recomm_nutrsuppl(userid)

@@ -8,6 +8,7 @@ RUN pip install uvicorn
 RUN pip install boto3
 RUN pip install python-multipart
 RUN pip install onnxruntime
+RUN pip install sklearn
 
 # Base ----------------------------------------
 RUN pip install matplotlib>=3.2.2
