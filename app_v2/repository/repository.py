@@ -377,7 +377,7 @@ class LogRepository:
     ####### MEAL log ##########
     ####3 유저 식단 섭취 로그 등록 ##
     ###########################
-    def s(self, userid:str, image_key:str, class_list:list, food_list:list):
+    def post_meal_log(self, userid:str, image_key:str, class_list:list, food_list:list):
         dt = datetime.now()
         response_put = self.__table.put_item(
             Item={
