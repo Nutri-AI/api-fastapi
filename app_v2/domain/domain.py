@@ -19,10 +19,12 @@ class UserJoinModel(BaseModel):
     username: str= Field(..., example= "호날두")
     physique: physique
 
-class NutrientsName(str, Enum):
-    vitamins= ["vitamins"]
-    multivitamin= ["multivitamin"]
-    nothing= None
+# class NutrientsName(str, Enum):
+#     vitamins= ["vitamins"]
+#     multivitamin= ["multivitamin"]
+#     nothing= None
+class NutrientsName(BaseModel):
+    nutrition_supplements: List[str]
 
 class MealLog(BaseModel):
     image_key: str= Field(..., example='file')
@@ -59,6 +61,7 @@ class UserDomain():
 
     ####7 nutr_suppl 수정 - 영양제 추가 등록 및 수정
     def update_user_nutr_suppl(self, userid: str, nutrsuppl):
+        nutrsuppl= nutrsuppl['nutrition_supplements']
         return self.__repository.update_user_nutr_suppl(userid, nutrsuppl)
 
     ####8 유저 nutr_suppl 정보 요청

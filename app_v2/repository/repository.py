@@ -236,7 +236,7 @@ class UserRepository:
             },
             UpdateExpression='''
                 SET
-                    nutr_suppl = :new_nutr_suppl
+                    nutr_suppl= list_append(nutr_suppl, :new_nutr_suppl)
             ''',
             ExpressionAttributeValues={
                 ':new_nutr_suppl' : nutrsuppl

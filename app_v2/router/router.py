@@ -55,7 +55,7 @@ class UserRouter:
         ####7 nutr_suppl 수정 - 영양제 추가 등록 및 수정
         @api_router.put('/update/nutrients/{userid}')
         def update_user_nutr_suppl(userid: str, nutrsuppl: NutrientsName):
-            return self.__domain.update_user_nutr_suppl(userid, nutrsuppl)
+            return self.__domain.update_user_nutr_suppl(userid, nutrsuppl.dict())
         
         ####8 유저 nutr_suppl 정보 요청
         @api_router.get('/get/nutr/suppl/{userid}')
