@@ -739,7 +739,7 @@ class LogRepository:
         user_status = self.get_user_nutr_log_ndays(userid, 7)
         user_status_sr = pd.Series(user_status, dtype=float).drop(['Calories', 'Folic_acid', 'Carbohydrate', 'Protein', 'Fat', 'Cholesterol'])
         # diff rat
-        user_diffrat = pd.Series(((user_rdi_sr - user_status_sr) / user_rdi_sr) / 100., dtype=float)
+        user_diffrat = pd.Series(((user_rdi_sr - user_status_sr) / user_rdi_sr) / 100., dtype=float, name='user')
         user_diffrat.fillna(0, inplace=True)
         # standard columns
         std_col = user_diffrat.index
