@@ -25,7 +25,7 @@ total= {
     'Folic_acid': 0, 'Vitamin_B12': 0, 'Vitamin_B6': 0, 'Vitamin_C': 0, 'Vitamin_E': 0,
     'Vitamin_K': 0, 'Leucine': 0, 'Iso_Leucine': 0, 'Histidine': 0, 'Linoleic_Acid': 0, 
     'Alpha_Linolenic_Acid': 0, 'Lysine': 0, 'Methionine': 0, 'Phenylalanine+Tyrosine': 0,
-    'Threonine': 0, 'Valine': 0, 'Cholesterol': 0
+    'Threonine': 0, 'Valine': 0, 'Cholesterol': 0, 'Calories': 0
     }
 
 # fnames = ["pork_belly","ramen","bibimbap","champon","cold_noodle","cutlassfish","egg_custard",
