@@ -372,14 +372,7 @@ class LogRepository:
             },
             ProjectionExpression='nutrients'
         ).get('Item').get('nutrients')
-        res= total
-        for i in res.keys():
-            if i in response.keys():
-                res[i]= Decimal(str(round(float(response[i]), 1)))
-            else:
-                res[i]= Decimal('0')
-        return res
-        #return response
+        return response
 
     ####### MEAL log ##########
     ####3 유저 식단 섭취 로그 등록 ##
