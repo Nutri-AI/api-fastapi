@@ -372,12 +372,6 @@ class LogRepository:
             },
             ProjectionExpression='nutrients'
         ).get('Item').get('nutrients')
-        # nutr_info= response
-        # for i in total.keys():
-        #     if i in nutr_info.keys():
-        #         total[i]= round(float(nutr_info[i]), 1)
-        #     else:
-        #         total[i]= 0
         return response
 
     ####### MEAL log ##########

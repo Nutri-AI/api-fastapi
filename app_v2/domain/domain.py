@@ -3,7 +3,7 @@ import re
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from enum import Enum
-import base64
+from typing import List
 
 from app_v2.repository.repository import UserRepository, LogRepository
 
@@ -24,6 +24,9 @@ class NutrientsName(str, Enum):
     multivitamin= ["multivitamin"]
     nothing= None
 
+class ClasslistFoodlist(BaseModel):
+    class_list: List[str]
+    food_list: List[str]
 class UserDomain():
     def __init__(self, repository: UserRepository):
         self.__repository= repository   
@@ -80,7 +83,9 @@ class LogDomain():
         return self.__repository.get_food_nutrients(food_cat, food_name)
 
     ####3 유저 식단 섭취 로그 등록
-    def post_meal_log(self, userid: str, image_key, class_list, food_list: list):
+    def post_meal_log(self, userid: str, image_key: str, request):
+        class_list= request['class_list']
+        food_list= request['food_list']
         return self.__repository.post_meal_log(userid, image_key, class_list, food_list)
 
     #### update 식단 로그, 음식 리스트만 수정
