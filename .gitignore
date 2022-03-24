@@ -8,3 +8,7 @@ app_v2/internal/database.py
 *.py[cod]
 *$py.class
 
+**/.DS_Store
+/.DS_Store
+
+
