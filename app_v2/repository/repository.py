@@ -732,7 +732,8 @@ class LogRepository:
             Key={
                 'PK': f'NUTRSUPPL#{nutr_cat}',
                 'SK': f'NUTRSUPPL#{product_code}'
-            }
+            },
+            ProjectionExpression='price, title, url'
         )
         return response.get('Item')
 
