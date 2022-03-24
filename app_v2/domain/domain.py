@@ -24,9 +24,11 @@ class NutrientsName(str, Enum):
     multivitamin= ["multivitamin"]
     nothing= None
 
-class ClasslistFoodlist(BaseModel):
+class MealLog(BaseModel):
+    image_key: str= Field(..., example='file')
     class_list: List[str]
     food_list: List[str]
+
 class UserDomain():
     def __init__(self, repository: UserRepository):
         self.__repository= repository   
@@ -83,7 +85,8 @@ class LogDomain():
         return self.__repository.get_food_nutrients(food_cat, food_name)
 
     ####3 유저 식단 섭취 로그 등록
-    def post_meal_log(self, userid: str, image_key: str, request):
+    def post_meal_log(self, userid: str, request:dict):
+        image_key = request['image_key']
         class_list= request['class_list']
         food_list= request['food_list']
         return self.__repository.post_meal_log(userid, image_key, class_list, food_list)
