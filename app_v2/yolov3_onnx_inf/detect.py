@@ -104,7 +104,7 @@ def run(image,
     img = Image.open(BytesIO(image))
     # img= np.fromstring(image, dtype= np.uint8)
     # dimg= cv2.imdecode(img, cv2.IMREAD_COLOR)
-    source = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    img_arr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
     source= cv2.resize(img_arr, (640, 400))
     save_img = not nosave 
 
