@@ -219,7 +219,7 @@ class UserRepository:
             },
             ProjectionExpression='RDI'
         )
-        return {i:round(float(v),1) for i,v in response.get('Item').get('RDI').items()}
+        return {i:int(v) for i,v in response.get('Item').get('RDI').items()}
 
     ####7 nutr_suppl 수정 - 영양제 추가 등록 및 수정
     # input: userid, nutr_suppl(prod_code 만 있는 리스트)
@@ -372,7 +372,14 @@ class LogRepository:
             },
             ProjectionExpression='nutrients'
         ).get('Item').get('nutrients')
-        return response
+        #return response
+        res= total
+        for i in res.keys():
+            if i in response.keys():
+                res[i]= Decimal(str(int(response[i])))
+            else:
+                res[i]= Decimal('0')
+        return res
 
     ####### MEAL log ##########
     ####3 유저 식단 섭취 로그 등록 ##
@@ -393,7 +400,7 @@ class LogRepository:
             response_nutr += Counter(nutr)
             response_status = self.update_user_meal_nutr_log(userid, nutr)
         for i in response_nutr.keys():
-            response_nutr[i] = round(float(response_nutr[i]), 1)
+            response_nutr[i] = int(response_nutr[i])
         response = {'nutrients': response_nutr}
         return response
 
@@ -689,7 +696,7 @@ class LogRepository:
                 response['nutr_status'] = item['nutr_status']
             else:
                 pass
-        return response
+        return {i:int(v) for i,v in response.get('RDI').items()}
 
 
     # 1 week status query
