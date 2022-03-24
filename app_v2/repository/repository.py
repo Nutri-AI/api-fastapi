@@ -385,7 +385,7 @@ class LogRepository:
                 res[i]= Decimal('0')
         for j in pcf_status.keys():
             if j in response.keys():
-                res[i]= Decimal(str(int(response[i])))
+                res[j]= Decimal(str(int(response[j])))
         return res
 
     ####### MEAL log ##########
