@@ -696,7 +696,8 @@ class LogRepository:
                 response['nutr_status'] = item['nutr_status']
             else:
                 pass
-        return {i:int(v) for i,v in response.get('RDI').items()}
+        #return {i:int(v) for i,v in response.get('RDI').items()}
+        return response
 
 
     # 1 week status query
