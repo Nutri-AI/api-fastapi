@@ -31,7 +31,7 @@ total= {
     }
 
 pcf_status= {
-    'Protein': 0, 'Fat': 0, 'Calories': 0
+    'Protein': 0, 'Fat': 0, 'Calories': 0, 'Carbohydrate': 0
     }
 
 # fnames = ["pork_belly","ramen","bibimbap","champon","cold_noodle","cutlassfish","egg_custard",
