@@ -387,7 +387,7 @@ class LogRepository:
                 res[i]= Decimal('0')
         for j in pcf_status.keys():
             if j in response.keys():
-                res[j]= Decimal(str(int(response[j])+0.5))
+                res[j]= Decimal(str(round(float(response[j]), 1)))
         return res
 
     ####### MEAL log ##########
@@ -411,7 +411,7 @@ class LogRepository:
         
         for i in response_nutr.keys():
             if i in pcf_status.keys():
-                response_nutr[i]= int(response_nutr[i]+0.5)    
+                response_nutr[i]= round(float(response_nutr[i]), 1)    
             else:    
                 response_nutr[i]= round(float(response_nutr[i]), 1)
         response= {'nutrients': response_nutr}
