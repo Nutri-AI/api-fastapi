@@ -149,22 +149,22 @@ class LogRouter:
         
         ####13 get 사용자 영양상태 로그 - 특정 날짜 (식단 + 영양제)
         @api_router.get('/get/nutr-log')
-        def get_user_nutr_log(self, userid:str, date): 
+        def get_user_nutr_log(userid:str, date): 
             return self.__domain.get_user_nutr_log(userid, date)
 
         ####14 get 사용자 영양상태 로그 - 특정 날짜 (식단)
         @api_router.get('/get/nutr-log-meal')
-        def get_user_nutr_log_meal(self, userid:str, date):
+        def get_user_nutr_log_meal(userid:str, date):
             return self.__domain.get_user_nutr_log_meal(userid, date)
 
         ####15 get 사용자 영양상태 로그 - 특정 날짜 (식단 - 탄단지)
         @api_router.get('/get/nutr-log-meal-cpf')
-        def get_user_nutr_log_meal_CPF(self, userid:str, date):
+        def get_user_nutr_log_meal_CPF(userid:str, date):
             return self.__domain.get_user_nutr_log_meal_CPF(userid, date)
 
         ####16 get 사용자 영양상태 로그 - 특정 날짜 (영양제)
         @api_router.get('/get/nutr-log-suppl')
-        def get_user_nutr_log_suppl(self, userid:str, date):
+        def get_user_nutr_log_suppl(userid:str, date):
             return self.__domain.get_user_nutr_log_suppl(userid, date)
 
         ####17 get 사용자 영양 상태 로그 - 오늘부터 n일 (식단 + 영양제)
