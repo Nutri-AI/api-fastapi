@@ -14,21 +14,25 @@ import boto3
 import json
 import re
 import pandas as pd
+from pprint import pprint
+
 from sklearn.metrics.pairwise import cosine_similarity
 
 from datetime import date, datetime, timedelta
 
 from app_v2.yolov3_onnx_inf import detect
 
-total= {
-    'Protein': 0, 'Fat': 0, 'Carbohydrate': 0, 'Dietary_Fiber': 0, 'Calcium': 0,
-    'Iron': 0, 'Magnesium': 0, 'Phosphorus': 0, 'Potassium': 0, 'Sodium': 0, 'Zinc': 0,
-    'Copper': 0, 'Manganese': 0, 'Selenium': 0, 'Vitamin_A': 0, 'Vitamin_D': 0, 'Niacin': 0,
-    'Folic_acid': 0, 'Vitamin_B12': 0, 'Vitamin_B6': 0, 'Vitamin_C': 0, 'Vitamin_E': 0,
-    'Vitamin_K': 0, 'Leucine': 0, 'Iso_Leucine': 0, 'Histidine': 0, 'Linoleic_Acid': 0, 
-    'Alpha_Linolenic_Acid': 0, 'Lysine': 0, 'Methionine': 0, 'Phenylalanine+Tyrosine': 0,
-    'Threonine': 0, 'Valine': 0, 'Cholesterol': 0, 'Calories': 0
-    }
+base_rdi= {
+    'Dietary_Fiber': Decimal('0'), 'Calcium': Decimal('0'), 'Iron': Decimal('0'), 'Magnesium': Decimal('0'), 'Phosphorus': Decimal('0'), 'Potassium': Decimal('0'), 'Sodium': Decimal('0'), 'Zinc': Decimal('0'), 'Copper': Decimal('0'), 'Manganese': Decimal('0'), 'Selenium': Decimal('0'), 'Vitamin_A': Decimal('0'), 'Vitamin_D': Decimal('0'), 'Niacin': Decimal('0'), 'Folic_acid': Decimal('0'), 'Vitamin_B12': Decimal('0'), 'Vitamin_B6': Decimal('0'), 'Vitamin_C': Decimal('0'), 'Vitamin_E': Decimal('0'), 'Vitamin_K': Decimal('0'), 'Leucine': Decimal('0'), 'Iso_Leucine': Decimal('0'), 'Histidine': Decimal('0'), 'Linoleic_Acid': Decimal('0'), 'Alpha_Linolenic_Acid': Decimal('0'), 'Lysine': Decimal('0'), 'Methionine': Decimal('0'), 'Phenylalanine+Tyrosine': Decimal('0'), 'Threonine': Decimal('0'), 'Valine': Decimal('0')
+}
+    # 'Protein': 0, 'Fat': 0, 'Carbohydrate': 0, 'Dietary_Fiber': 0, 'Calcium': 0,
+    # 'Iron': 0, 'Magnesium': 0, 'Phosphorus': 0, 'Potassium': 0, 'Sodium': 0, 'Zinc': 0,
+    # 'Copper': 0, 'Manganese': 0, 'Selenium': 0, 'Vitamin_A': 0, 'Vitamin_D': 0, 'Niacin': 0,
+    # 'Folic_acid': 0, 'Vitamin_B12': 0, 'Vitamin_B6': 0, 'Vitamin_C': 0, 'Vitamin_E': 0,
+    # 'Vitamin_K': 0, 'Leucine': 0, 'Iso_Leucine': 0, 'Histidine': 0, 'Linoleic_Acid': 0, 
+    # 'Alpha_Linolenic_Acid': 0, 'Lysine': 0, 'Methionine': 0, 'Phenylalanine+Tyrosine': 0,
+    # 'Threonine': 0, 'Valine': 0, 'Cholesterol': 0, 'Calories': 0
+    # }
 
 pcf_status= {
     'Protein': 0, 'Fat': 0, 'Calories': 0, 'Carbohydrate': 0
@@ -378,21 +382,13 @@ class LogRepository:
             },
             ProjectionExpression='nutrients'
         ).get('Item').get('nutrients')
-        #return response
-        res= total
-        for i in res.keys():
-            if i in response.keys():
-                res[i]= Decimal(str(round(float(response[i]), 1)))
-            else:
-                res[i]= Decimal('0')
-        for j in pcf_status.keys():
-            if j in response.keys():
-                res[j]= Decimal(str(int(response[j])+0.5))
-        return res
+        return response
+
 
     ####### MEAL log ##########
     ####3 유저 식단 섭취 로그 등록 ##
-    ###########################
+    # input : userid, image_key, class list, food list
+    # output : meal nutrients
     def post_meal_log(self, userid:str, image_key:str, class_list:list, food_list:list):
         dt = datetime.now()
         response_put = self.__table.put_item(
@@ -403,7 +399,7 @@ class LogRepository:
                 'food_list': food_list
             }
         )
-        response_nutr = Counter(total)
+        response_nutr = Counter(base_rdi) ##### 
         for c, f in zip(class_list, food_list):
             nutr = self.get_food_nutrients(c, f)
             response_nutr += Counter(nutr)
@@ -411,12 +407,12 @@ class LogRepository:
         
         for i in response_nutr.keys():
             if i in pcf_status.keys():
-                response_nutr[i]= int(response_nutr[i]+0.5)    
-            else:    
-                response_nutr[i]= round(float(response_nutr[i]), 1)
+                response_nutr[i] = round(float(response_nutr[i]))
+            else:
+                response_nutr[i] = float(response_nutr[i])
         response= {'nutrients': response_nutr}
-        # 음식 영양 성분
         return response
+
 
     # update 식단 로그, 음식 리스트만 수정
     # input : userID, datetime(isoformat), new food list
@@ -467,14 +463,13 @@ class LogRepository:
             },
             ProjectionExpression='nutrients'
         )
-        nutr_info= response.get('Item').get('nutrients')
-        for i in total.keys():
-            if i in nutr_info.keys():
-                total[i]= round(float(nutr_info[i]), 1)
-            else:
-                total[i]= 0
-                
-        return total
+        # nutr_info= response.get('Item').get('nutrients')
+        # for i in total.keys():
+        #     if i in nutr_info.keys():
+        #         total[i]= round(float(nutr_info[i]), 1)
+        #     else:
+        #         total[i]= 0
+        return response.get('Item').get('nutrients') #total
 
     ####### NUTRTAKE log
     ####7 유저 영양제 섭취 로그 등록
@@ -539,7 +534,7 @@ class LogRepository:
                 }
             ).get('Item').get('nutr_status')
         except:
-            old_status = total
+            old_status = base_rdi
         new_status = Counter(old_status) + Counter(food_nutrients)
         response = self.__table.update_item(
             Key={
@@ -569,7 +564,7 @@ class LogRepository:
                 }
             ).get('Item').get('nutr_status')
         except:
-            old_status = total
+            old_status = base_rdi
         new_status = Counter(old_status) + Counter(suppl_nutrients)
         response = self.__table.update_item(
             Key={
