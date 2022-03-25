@@ -61,7 +61,7 @@ class DetectMultiBackend():
             #2022.03.02 edited by nhwh
             names = ["pork_belly","ramen","bibimbap","champon","cold_noodle","cutlassfish","egg_custard","egg_soup","jajangmyeon","kimchi_stew","multigrain_rice",
                      "oxtail_soup","pickled spianch","pizza","pork_feet","quail_egg_stew","seasoned_chicken","seaweed_soup","soy_bean_paste_soup","stewed_bean","stewed_lotus_stew",
-                     "stir_fried_anchovy","sitr_fried_pork","salad","ice_americano","Bottled_Beer","Canned_Beer","Draft_Beer","Fried_Chicken","Tteokbokki","Cabbage_Kimchi","Radish_Kimchi", "None"]
+                     "stir_fried_anchovy","stir_fried_pork","salad","ice_americano","Bottled_Beer","Canned_Beer","Draft_Beer","Fried_Chicken","Tteokbokki","Cabbage_Kimchi","Radish_Kimchi", "None"]
             #2022.03.02 edited by nhwh
             session = onnxruntime.InferenceSession(w, providers=['CUDAExecutionProvider','TensorrtExecutionProvider', 'CPUExecutionProvider'])
         self.__dict__.update(locals())  # assign all variables to self
