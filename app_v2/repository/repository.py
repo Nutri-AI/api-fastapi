@@ -1,4 +1,5 @@
 from collections import Counter
+from itertools import count
 from urllib import response
 from boto3.resources.base import ServiceResource
 from botocore.exceptions import ClientError
@@ -655,10 +656,16 @@ class LogRepository:
             FilterExpression=Attr('status_type').eq('MEAL'),
             ProjectionExpression='SK'
         ).get('Items')
-        result = Counter(dict())
+
+        cnt_items = len(response)
+
+        count = Counter(dict())
         for i in range(len(response)):
             result += Counter(response[i].get('nutr_status'))
-        return dict(result)
+        count = dict(count)
+
+        result = {key : count[key] / cnt_items for key in count.keys()}
+        return result
 
     ####19 get 사용자 영양 상태 로그 - 오늘부터 n일 (영양제)
     # input : userID, number of days
@@ -709,6 +716,7 @@ class LogRepository:
     def get_user_week_status(self, userid:str):
         # query ( NUTRSTATUS )
         response_nutr = self.get_user_nutr_log_ndays(userid, 7)
+        # get user data
         response = self.__table.get_item(
             Key={
                 'PK': f'USER#{userid}',
