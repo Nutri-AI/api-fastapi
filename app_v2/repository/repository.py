@@ -21,6 +21,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from datetime import date, datetime, timedelta
 
+
 from app_v2.yolov3_onnx_inf import detect
 
 base_rdi= {
@@ -52,6 +53,8 @@ fnames = ["삼겹살구이","라면","비빔밥","짬뽕","냉면","갈치조림
         "미역국","된장찌개","콩자반","연근조림",
         "멸치볶음","제육볶음","샐러드","아메리카노","맥주","맥주",
         "맥주","후라이드치킨","떡볶이","배추김치","깍두기", "No_detect"]
+
+KST = timedelta(hours=9)
 
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
@@ -94,7 +97,7 @@ class UserRepository:
         user_weight = physique['weight']
         user_pai = physique['PAI']
 
-        today = date.today()
+        today = (datetime.utcnow()+KST).date()
         cal_age= lambda birth: today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
         age = cal_age(user_birth)
 
@@ -319,8 +322,9 @@ class LogRepository:
         img= np.fromstring(image, dtype= np.uint8)
         dimg= cv2.imdecode(img, cv2.COLOR_RGB2BGR)
         _, dimg_byte = cv2.imencode('.jpg', dimg)
+        kst_datetime = (datetime.utcnow() + KST).isoformat()
 
-        origin_obj_name= f'{userid}/origin_{datetime.now().isoformat()}.jpeg'
+        origin_obj_name= f'{userid}/origin_{kst_datetime}.jpeg'
         origin_response= self.create_presigned_post('nutriai', origin_obj_name)
         if origin_response is None:
             exit(1)
@@ -330,7 +334,7 @@ class LogRepository:
         # Inference
         _img, _class = detect.main(image)
 
-        obj_name= f'{userid}/{datetime.now().isoformat()}.jpeg'
+        obj_name= f'{userid}/{kst_datetime}.jpeg'
         infer_response= self.create_presigned_post('nutriai', obj_name)
         if infer_response is None:
             exit(1)
@@ -391,11 +395,11 @@ class LogRepository:
     # input : userid, image_key, class list, food list
     # output : meal nutrients
     def post_meal_log(self, userid:str, image_key:str, class_list:list, food_list:list):
-        dt = datetime.now()
+        kst_datetime = (datetime.utcnow() + KST)
         response_put = self.__table.put_item(
             Item={
                 'PK': f'USER#{userid}',
-                'SK': f'{dt.date().isoformat()}#MEAL#{dt.time().isoformat()}',
+                'SK': f'{kst_datetime.date().isoformat()}#MEAL#{kst_datetime.time().isoformat()}',
                 'photo': image_key,
                 'food_list': food_list
             }
@@ -475,11 +479,11 @@ class LogRepository:
     ####### NUTRTAKE log
     ####7 유저 영양제 섭취 로그 등록
     def post_nutrtake_log(self, userid:str, nutr_suppl_list:dict):
-        dt = datetime.now()
+        kst_datetime = (datetime.utcnow() + KST)
         response = self.__table.put_item(
             Item={
                 'PK': f'USER#{userid}',
-                'SK': f'{dt.date().isoformat()}#SUPPLTAKE#{dt.time().isoformat()}',
+                'SK': f'{kst_datetime.date().isoformat()}#SUPPLTAKE#{kst_datetime.time().isoformat()}',
                 'nutr_suppl_take': nutr_suppl_list
             }
         )
@@ -527,11 +531,12 @@ class LogRepository:
 ##################
     ####11 유저 영양 상태 식단 로그 입력 & 업데이트
     def update_user_meal_nutr_log(self, userid:str, food_nutrients:dict):
+        kst_date = (datetime.utcnow() + KST).date()
         try:
             old_status = self.__table.get_item(
                 Key={
                     'PK': f'USER#{userid}',
-                    'SK': f'{date.today()}#NUTRSTATUS#MEAL'
+                    'SK': f'{kst_date}#NUTRSTATUS#MEAL'
                 }
             ).get('Item').get('nutr_status')
         except:
@@ -540,7 +545,7 @@ class LogRepository:
         response = self.__table.update_item(
             Key={
                 'PK': f'USER#{userid}',
-                'SK': f'{date.today()}#NUTRSTATUS#MEAL'
+                'SK': f'{kst_date}#NUTRSTATUS#MEAL'
             },
             UpdateExpression='''
                 SET
@@ -557,11 +562,12 @@ class LogRepository:
 
     ####12 유저 영샹 상태 영양제 로그 입력 & 업데이트
     def update_user_nutrtake_nutr_log(self, userid:str, suppl_nutrients:dict):
+        kst_date = (datetime.utcnow() + KST).date()
         try:
             old_status = self.__table.get_item(
                 Key={
                     'PK': f'USER#{userid}',
-                    'SK': f'{date.today()}#NUTRSTATUS#SUPPLTAKE'
+                    'SK': f'{kst_date}#NUTRSTATUS#SUPPLTAKE'
                 }
             ).get('Item').get('nutr_status')
         except:
@@ -570,7 +576,7 @@ class LogRepository:
         response = self.__table.update_item(
             Key={
                 'PK': f'USER#{userid}',
-                'SK': f'{date.today()}#NUTRSTATUS#SUPPLTAKE'
+                'SK': f'{kst_date}#NUTRSTATUS#SUPPLTAKE'
             },
             UpdateExpression='''
                 SET
@@ -633,8 +639,9 @@ class LogRepository:
     # input : userID, number of days
     # output :
     def get_user_nutr_log_ndays(self, userid:str, ndays:int) -> dict:
-        date_from = date.today() - timedelta(days=ndays-1)
-        date_to = date.today() + timedelta(days=1)
+        kst_date = (datetime.utcnow() + KST).date()
+        date_from = kst_date - timedelta(days=ndays-1)
+        date_to = kst_date + timedelta(days=1)
         response = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').between(f'{date_from}#NUTRSTATUS#',f'{date_to}#NUTRSTATUS#'),
             FilterExpression=Attr('nutr_status').exists(),
@@ -653,8 +660,9 @@ class LogRepository:
     # input : userID, number of days
     # output :
     def get_user_nutr_log_meal_ndays(self, userid:str, ndays:int) -> dict:
-        date_from = date.today() - timedelta(days=ndays-1)
-        date_to = date.today() + timedelta(days=1)
+        kst_date = (datetime.utcnow() + KST).date()
+        date_from = kst_date - timedelta(days=ndays-1)
+        date_to = kst_date + timedelta(days=1)
         response = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').between(f'{date_from}#NUTRSTATUS#',f'{date_to}#NUTRSTATUS#'),
             FilterExpression=Attr('status_type').eq('MEAL'),
@@ -673,8 +681,9 @@ class LogRepository:
     # input : userID, number of days
     # output :
     def get_user_nutr_log_suppl_ndays(self, userid:str, ndays:int) -> dict:
-        date_from = date.today() - timedelta(days=ndays-1)
-        date_to = date.today() + timedelta(days=1)
+        kst_date = (datetime.utcnow() + KST).date()
+        date_from = kst_date - timedelta(days=ndays-1)
+        date_to = kst_date + timedelta(days=1)
         response = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').between(f'{date_from}#NUTRSTATUS#',f'{date_to}#NUTRSTATUS#'),
             FilterExpression=Attr('status_type').eq('SUPPLTAKE'),
@@ -692,9 +701,10 @@ class LogRepository:
 
     # today status query
     def get_user_today_status(self, userid:str):
+        kst_date = (datetime.utcnow() + KST).date()
         # query (NUTRSTATUS#MEAL & #MEAL#)
         response_nutr = self.__table.query(
-            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(date.today().isoformat()),
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(kst_date.isoformat()),
             FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
             ExpressionAttributeNames={'#ns': 'nutr_status'},
             ProjectionExpression='SK, status_type, food_list, #ns' # .Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
