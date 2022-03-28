@@ -740,9 +740,9 @@ class LogRepository:
                 'PK': f'USER#{userid}',
                 'SK': f'USER#{userid}#INFO'
             },
-            ProjectionExpression='RDI'
-        ).get('Item').get('RDI')
-        user_rdi_sr = pd.Series(user_rdi, dtype=float).drop(['Calories', 'Folic_acid', 'Carbohydrate', 'Protein', 'Fat'])
+            ProjectionExpression='RDI, username'
+        ).get('Item')#.get('RDI')
+        user_rdi_sr = pd.Series(user_rdi.get('RDI'), dtype=float).drop(['Calories', 'Folic_acid', 'Carbohydrate', 'Protein', 'Fat'])
         # user week status
         user_status = self.get_user_nutr_log_ndays(userid, 7)
         user_status_sr = pd.Series(user_status, dtype=float).drop(['Calories', 'Folic_acid', 'Carbohydrate', 'Protein', 'Fat', 'Cholesterol'])
@@ -754,6 +754,7 @@ class LogRepository:
 
         # nutrition supplements data
         response = dict()
+        response['name']= user_rdi.get('username')
         nutrsuppl_cat = ['amino-acids','minerals','vitamins']
         for cat in nutrsuppl_cat:
             suppl_list = self.__table.query(
