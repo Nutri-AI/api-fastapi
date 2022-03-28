@@ -640,10 +640,14 @@ class LogRepository:
             FilterExpression=Attr('nutr_status').exists(),
             ProjectionExpression='SK, nutr_status'
         ).get('Items')
-        result = Counter(dict())
-        for i in range(len(response)):
-            result += Counter(response[i].get('nutr_status'))
-        return dict(result)
+
+        cnt_items = len(response)
+        count = Counter(dict())
+        for i in range(cnt_items):
+            count += Counter(response[i].get('nutr_status'))
+        count = dict(count)
+        result = {key : count[key] / cnt_items for key in count.keys()}
+        return result
 
     ####18 get 사용자 영양 상태 로그 - 오늘부터 n일 (식단)
     # input : userID, number of days
@@ -658,12 +662,10 @@ class LogRepository:
         ).get('Items')
 
         cnt_items = len(response)
-
         count = Counter(dict())
-        for i in range(len(response)):
+        for i in range(cnt_items):
             count += Counter(response[i].get('nutr_status'))
         count = dict(count)
-
         result = {key : count[key] / cnt_items for key in count.keys()}
         return result
 
@@ -678,9 +680,14 @@ class LogRepository:
             FilterExpression=Attr('status_type').eq('SUPPLTAKE'),
             ProjectionExpression='SK, nutr_status'
         ).get('Items')
-        for i in range(len(response)):
-            result += Counter(response[i].get('nutr_status'))
-        return dict(result)
+
+        cnt_items = len(response)
+        count = Counter(dict())
+        for i in range(cnt_items):
+            count += Counter(response[i].get('nutr_status'))
+        count = dict(count)
+        result = {key : count[key] / cnt_items for key in count.keys()}
+        return result
 
 
     # today status query
