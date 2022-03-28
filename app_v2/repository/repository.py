@@ -646,7 +646,7 @@ class LogRepository:
         for i in range(cnt_items):
             count += Counter(response[i].get('nutr_status'))
         count = dict(count)
-        result = {key : count[key] / cnt_items for key in count.keys()}
+        result = {key : round(float(count[key] / cnt_items), 1) for key in count.keys()}
         return result
 
     ####18 get 사용자 영양 상태 로그 - 오늘부터 n일 (식단)
@@ -666,7 +666,7 @@ class LogRepository:
         for i in range(cnt_items):
             count += Counter(response[i].get('nutr_status'))
         count = dict(count)
-        result = {key : count[key] / cnt_items for key in count.keys()}
+        result = {key : round(float(count[key] / cnt_items), 1) for key in count.keys()}
         return result
 
     ####19 get 사용자 영양 상태 로그 - 오늘부터 n일 (영양제)
@@ -686,7 +686,7 @@ class LogRepository:
         for i in range(cnt_items):
             count += Counter(response[i].get('nutr_status'))
         count = dict(count)
-        result = {key : count[key] / cnt_items for key in count.keys()}
+        result = {key : round(float(count[key] / cnt_items), 1) for key in count.keys()}
         return result
 
 
