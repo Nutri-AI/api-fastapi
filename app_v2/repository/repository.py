@@ -661,7 +661,7 @@ class LogRepository:
 
         count = Counter(dict())
         for i in range(len(response)):
-            result += Counter(response[i].get('nutr_status'))
+            count += Counter(response[i].get('nutr_status'))
         count = dict(count)
 
         result = {key : count[key] / cnt_items for key in count.keys()}
