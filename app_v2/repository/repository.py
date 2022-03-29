@@ -794,20 +794,20 @@ class LogRepository:
             suppl_df = pd.DataFrame(pd.DataFrame(temp_list).set_index('prod_cd'), columns=std_col, dtype=float).fillna(0)
             suppl_rat_df = (suppl_df/user_rdi_sr) / 100.
 
-            if cat in ['amino-acids','minerals']:
+            if cat in ['amino-acids','vitamins']:
+                # SSE
                 suppl_sse = suppl_rat_df.apply(lambda row : np.sum((row - user_diffrat)**2), axis=1)
                 prod_code = list(suppl_sse.sort_values().index[0:3])
-                print(prod_code)
                 supp_pd_list = list()
                 for cd in prod_code:
                     supp_pd_list.append(self.get_nutr_suppl(cat, cd))
                 response[cat] = supp_pd_list
-            elif cat == 'vitamins':
+            elif cat in ['minerals']:
+                # Cosine Similarity
                 test_cosim_df = suppl_rat_df.append(user_diffrat).fillna(0)
                 test_cosim_df['cosim'] = cosine_similarity(test_cosim_df,test_cosim_df)[:,-1]
                 prod_code = list(test_cosim_df.sort_values(by='cosim', ascending=False).index[1:4])
                 supp_pd_list = list()
-                print(prod_code)
                 for cd in prod_code:
                     supp_pd_list.append(self.get_nutr_suppl(cat, cd))
                 response[cat] = supp_pd_list
