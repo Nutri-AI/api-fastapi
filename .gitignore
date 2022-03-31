@@ -11,4 +11,6 @@ app_v2/internal/database.py
 **/.DS_Store
 /.DS_Store
 
+app_v2/repository/tablename.py
+
 
