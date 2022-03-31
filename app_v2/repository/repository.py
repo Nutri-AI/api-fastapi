@@ -1,6 +1,7 @@
 from collections import Counter
 from itertools import count
 from urllib import response
+from tablename import *
 from boto3.resources.base import ServiceResource
 from botocore.exceptions import ClientError
 from fastapi.responses import JSONResponse
@@ -59,7 +60,7 @@ KST = timedelta(hours=9)
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db, self.__s3= db
-        self.__table = self.__db.Table('nutriai_test')
+        self.__table = self.__db.Table(table_name)
 
     def __get_rdi_pk(self, age):
         if age == 0:
