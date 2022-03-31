@@ -281,7 +281,7 @@ class UserRepository:
 class LogRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db, self.__s3= db
-        self.__table= self.__db.Table('nutriai_test')
+        self.__table= self.__db.Table(table_name)
 
     #### S3 저장 공간 생성? 
     def create_presigned_post(self, bucket_name: str, key_name: str, 
