@@ -19,13 +19,13 @@ link : https://fastapi.tiangolo.com/
   ├── generate_table.py -  dynamo DB에 새로운 테이블을 생성하는 모듈
   │
   ├── internal/ 
-  │       ├── database.py - dynamo DB와 S3 접속 권한 설정 모듈
+  │       ├── database.py - dynamo DB와 S3 연동을 위해 접속 권한 키 작성 모듈
   │
   ├── router/ 
-  │       ├── router.py - 클라이언트에게 Parameters 또는 Request Body에 어떠한  Input 데이터를 받을지 작성하는 모듈 
+  │       ├── router.py - 클라이언트에게 Parameters 또는 Request Body에 어떠한 Input 데이터를 받을지 작성하는 모듈 
   │
   ├── domain/ 
-  │       ├── domain.py - JSON 또는 Text 형태로 들어오는 Input 데이터를 받기 위해 Schema (for JSON)를 지정한다. 
+  │       ├── domain.py - JSON 또는 Text 형태로 들어오는 Input 데이터를 받기 위해 Schema(for JSON)를 지정. 
   │                       router에서 클라이언트에게 입력 받은 Input 데이터를 DB 접근 Key와 맞추거나, 
   │                       DB에 추가될 value의 형태로 바꾸는 모듈
   │
