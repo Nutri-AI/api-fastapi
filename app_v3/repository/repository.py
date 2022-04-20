@@ -1,9 +1,8 @@
 from collections import Counter
 from boto3.resources.base import ServiceResource
 from botocore.exceptions import ClientError
-from fastapi.responses import JSONResponse
 from boto3.dynamodb.conditions import Key, Attr
-from decimal import ROUND_HALF_UP, ROUND_UP, Decimal
+from decimal import ROUND_HALF_UP, Decimal
 import logging
 import requests
 import cv2
