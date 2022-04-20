@@ -1,6 +1,7 @@
 # fastapi git ignore file
 
 app_v2/internal/database.py
+app_v3/internal/database.py
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
@@ -12,5 +13,5 @@ app_v2/internal/database.py
 /.DS_Store
 
 app_v2/repository/tablename.py
-
+app_v3/repository/tablename.py
 
