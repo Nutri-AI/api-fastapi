@@ -1,13 +1,12 @@
 from fastapi import FastAPI
 
-from app_v2.internal.database import initialize_db
+from app_v3.internal.database import initialize_db
 
-from app_v2.generate_table import generate_table
+from app_v3.generate_table import generate_table
 
-from app_v2.repository.repository import UserRepository, LogRepository
-from app_v2.domain.domain import UserDomain, LogDomain
-from app_v2.router.router import UserRouter, LogRouter
-
+from app_v3.repository.repository import UserRepository, LogRepository
+from app_v3.domain.domain import UserDomain, LogDomain
+from app_v3.router.router import UserRouter, LogRouter
 
 app= FastAPI()
 

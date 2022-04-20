@@ -1,9 +1,6 @@
-from doctest import Example
 from lib2to3.pytree import Base
-import re
 from pydantic import BaseModel, Field
 from decimal import Decimal
-from enum import Enum
 from typing import List
 
 from app_v3.repository.repository import UserRepository, LogRepository
