@@ -37,7 +37,12 @@ https://fastapi.tiangolo.com/
  
   ```
   ## Requirements
-  [Dockerfile](https://github.com/Nutri-AI/api-fastapi/blob/feature_jh/Dockerfile)
+  [Dockerfile](https://github.com/Nutri-AI/api-fastapi/blob/feature_jh/Dockerfile)<br>
+  ```
+  docker build -t 이미지이름:태그이름 .(경로)
+  
+  docker run --rm -v $PWD:/workspace -p 8000:8000 -it 이미지이름:태그이름 bash
+  ```
 
 ## Transaction
 1. 신규 유저 가입
