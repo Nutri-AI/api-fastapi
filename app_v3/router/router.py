@@ -39,7 +39,6 @@ class UserRouter:
             except:
                 raise HTTPException(status_code= status.HTTP_406_NOT_ACCEPTABLE, detail= 'Please enter the appropriate format for the item')
 
-        ####2 유저 정보 업데이트 - physique, RDI 수정
         '''
         유저 정보 업데이트 - physique, RDI 수정
         --------
