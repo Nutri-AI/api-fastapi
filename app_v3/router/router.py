@@ -16,7 +16,22 @@ class UserRouter:
         def root():
             return 'Welcome Here!'
 
-        ####1 신규 유저 가입
+        '''
+        신규 유저 가입
+        --------
+        Input
+        --------
+        UserJoinModel= 
+        { userid: str
+          username: str
+          physique: { birth: str,
+                      sex: str,
+                      height: Decimal,
+                      weight: Decimal,
+                      PAI: Decimal,
+                        }
+            }
+        '''
         @api_router.post('/join')
         def join_user(request: UserJoinModel):
             try:
@@ -25,16 +40,42 @@ class UserRouter:
                 raise HTTPException(status_code= status.HTTP_406_NOT_ACCEPTABLE, detail= 'Please enter the appropriate format for the item')
 
         ####2 유저 정보 업데이트 - physique, RDI 수정
+        '''
+        유저 정보 업데이트 - physique, RDI 수정
+        --------
+        Input
+        --------
+        userid: str,
+        physique= 
+        { birth: str,
+          sex: str,
+          height: Decimal,
+          weight: Decimal,
+          PAI: Decimal, 
+            }
+        '''
         @api_router.put('/update/{userid}')
         def update_user_physique(userid: str, physique: physique):
             return self.__domain.update_user_physique(userid, physique)
 
-        ####3 유저 physique 정보 요청
+        '''
+        유저 physique 정보 요청
+        --------
+        Input
+        --------
+        userid: str
+        '''
         @api_router.get('/get/physique/{userid}')
         def get_user_physique(userid: str):
             return self.__domain.get_user_physique(userid)
 
-        ####4 유저 정보 요청
+        '''
+        유저 정보 요청
+        --------
+        Input
+        --------
+        userid: str
+        '''
         @api_router.get('/info/{userid}')
         def get_user(userid):
             try:
@@ -42,22 +83,51 @@ class UserRouter:
             except:
                 raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail= 'No exist userid')
 
-        ####5 유저 정보 삭제
+        '''
+        (앱 구현 X)
+        유저 정보 삭제
+        --------
+        Input
+        --------
+        userid: str
+        '''
         @api_router.delete('/delete/{userid}')
         def delete_user(userid: str):
             return self.__domain.delete_user(userid)
 
-        ####6 유저 RDI 정보 요청
+        '''
+        유저 RDI 정보 요청
+        --------
+        Input
+        --------
+        userid: str
+        '''
         @api_router.get('/get/RDI/{userid}')
         def get_user_RDI(userid: str):
             return self.__domain.get_user_RDI(userid)
 
-        ####7 nutr_suppl 수정 - 영양제 추가 등록 및 수정
+        '''
+        (앱 구현 X)
+        nutr_suppl 수정 - 유저 별 영양제 추가 등록 및 수정
+        --------
+        Input
+        --------
+        userid: str,
+        NutrientsName=
+        nutrition_supplements: List[str]
+        '''
         @api_router.put('/update/nutrients/{userid}')
         def update_user_nutr_suppl(userid: str, nutrsuppl: NutrientsName):
             return self.__domain.update_user_nutr_suppl(userid, nutrsuppl.dict())
         
-        ####8 유저 nutr_suppl 정보 요청
+        '''
+        (앱 구현 X)
+        유저 nutr_suppl 정보 요청
+        --------
+        Input
+        --------
+        userid: str
+        '''
         @api_router.get('/get/nutr/suppl/{userid}')
         def get_user_nutr_suppl(userid: str):
             return self.__domain.get_user_nutr_suppl(userid)
@@ -73,53 +143,114 @@ class LogRouter:
     def router(self):
         api_router= APIRouter(prefix= '/log', tags= ['log'])
 
-        ####1 이미지 S3로 업로드 및 등등
+        '''
+        식단 이미지 S3 파일 서버에 업로드
+        --------
+        Input
+        --------
+        userid: str,
+        image: bytes
+        '''
         @api_router.post('/upload/image/{userid}')
         def upload_image(userid: str, image: bytes= File(...)):
             return self.__domain.upload_image(userid, image)
 
+        '''
+        Inference 이미지 S3 파일 서버에서 가져오기
+        --------
+        Input
+        --------
+        obj_name: Inference 이미지 S3 Image Key
+        '''
         @api_router.get('/get/s3-url')
-        def get_s3_url_file(userid: str, obj_name: str):
-            return self.__domain.get_s3_url_file(userid, obj_name)
+        def get_s3_url_file(obj_name: str):
+            return self.__domain.get_s3_url_file(obj_name)
 
-        ####2 음식 영양 성분 요청
+        
+        '''
+        음식 영양 성분 요청 
+        --------
+        Input - Inference 결과의 Class_type, Class_type의 상세 음식 이름
+        --------
+        food_cat: str,
+        food_name: str
+        '''
         @api_router.get('/get/food/nutrients')
         def get_food_nutrients(food_cat: str, food_name: str):
             return self.__domain.get_food_nutrients(food_cat, food_name)
 
-        ####3 유저 식단 섭취 로그 등록
+        '''
+        유저 식단 섭취 로그 등록
+        --------
+        Input
+        --------
+        userid: str,
+        request: MealLog=
+        { image_key: str
+          class_list: List[str]
+          food_list: List[str] 
+          }
+        '''
         @api_router.post('/post/meal/log/{userid}')
         def post_meal_log(userid: str, request: MealLog):
             return self.__domain.post_meal_log(userid, request.dict())
 
-
-
-        ####15 get 사용자 영양상태 로그 - 특정 날짜 (식단 - 탄단지)
+        '''
+        사용자 영양상태 로그 요청 - 특정 날짜 (식단 - 탄단지)
+        --------
+        Input
+        --------
+        userid: str,
+        date: yyyy-mm-dd 형식
+        '''
         @api_router.get('/get/nutr-log-meal-cpf')
-        def get_user_nutr_log_meal_CPF(userid:str, date):
+        def get_user_nutr_log_meal_CPF(userid: str, date):
             return self.__domain.get_user_nutr_log_meal_CPF(userid, date)
 
      
-
-        ####17 get 사용자 영양 상태 로그 - 오늘부터 n일 (식단 + 영양제)
+        '''
+        사용자 영양 상태 로그 요청 - 오늘부터 ndays일 (식단 + 영양제)
+        --------
+        Input
+        --------
+        userid: str,
+        ndays: int 
+        '''
         @api_router.get('/get/nutr-log-ndays')
-        def get_user_nutr_log_ndays(userid:str, ndays:int):
+        def get_user_nutr_log_ndays(userid: str, ndays: int):
             return self.__domain.get_user_nutr_log_ndays(userid, ndays)
 
-      
-
+        '''
+        today homepage 필요 정보 요청
+        --------
+        Input
+        --------
+        userid: str,
+        '''
         @api_router.get('/today/homepage/{userid}')
         def get_user_today_status(userid: str):
             return self.__domain.get_user_today_status(userid)
         
+        '''
+        a week status 필요 정보 요청
+        --------
+        Input
+        --------
+        userid: str,
+        '''
         @api_router.get('/week/status/{userid}')
         def get_user_week_status(userid:str):
             return self.__domain.get_user_week_status(userid)
 
-        ####20 유저 영양제 추천
+        '''
+        유저 영양제 추천
+        --------
+        Input
+        --------
+        userid: str,
+        '''
         @api_router.get('/recommend/nutrients/{userid}')
         def get_recomm_nutrsuppl(userid: str):
-            # request는 부족 영양소?
             return self.__domain.get_recomm_nutrsuppl(userid)
 
         return api_router

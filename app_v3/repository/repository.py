@@ -50,8 +50,14 @@ class UserRepository:
         self.__db, self.__s3= db
         self.__table = self.__db.Table('nutriai_test')
 
-# 사용
-    def __get_rdi_pk(self, age):
+    '''
+    유저 나이 별 RDI 분류
+    --------
+    생년월일 -> 나이 계산 -> 나이 별 RDI 기준으로 Partition Key 분류     
+
+    '''
+    @staticmethod
+    def __get_rdi_pk(age):
         if age == 0:
             return 'RDI#0'
         elif age in range(1,3):
@@ -79,8 +85,12 @@ class UserRepository:
         else:
             return None
 
-# 사용
-    ##### RDI 계산
+    '''
+    유저 RDI 계산
+    --------
+    나이 별 RDI 기준으로 Partition Key, 성 별 Sort Key -> 유저 별 1일 권장 섭취 칼로리 계산 -> 1일 권장 섭취 탄수화물, 단백질, 지방
+    
+    '''
     def __calculate_RDI(self, physique: dict) -> dict:
         user_birth = datetime.strptime(physique['birth'],'%Y-%m-%d')
         user_sex = physique['sex']
@@ -113,24 +123,20 @@ class UserRepository:
         temp_rdi['Carbohydrate'] = (Decimal('0.6')*Decimal(cal)/4).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         temp_rdi['Protein'] = (Decimal('0.17')*Decimal(cal)/4).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
         temp_rdi['Fat'] = (Decimal('0.23')*Decimal(cal)/9).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
-        # temp_rdi['Calories'] = cal
-        # temp_rdi['Carbohydrate'] = Decimal('0.6')*cal/4
-        # temp_rdi['Protein'] = Decimal('0.17')*cal/4
-        # temp_rdi['Fat'] = Decimal('0.23')*cal/9
         
         return temp_rdi
-
-# 사용   
-    ####1 신규 유저 가입
-    # input: userid, physique{}
-    # output: {physique, RDI}
+ 
+    '''
+    신규 유저 가입
+    --------
+    Output== Input
+    '''
     def join_user(self, request:dict):
         res= request.copy()
         userid = request.pop('userid')
 
         request['PK'] = f'USER#{userid}'
         request['SK'] = f'USER#{userid}#INFO'
-        #physique= request.get('physique')
         request['RDI'] = self.__calculate_RDI(request.get('physique'))
         request['nutr_suppl'] = list()
 
@@ -140,12 +146,13 @@ class UserRepository:
         )
         return res
 
-
-# 사용
-    ####2 유저 정보 업데이트 - physique, RDI 수정
-    # input: userid, physique{}
-    # output: {physique, RDI}
-    def update_user_physique(self, userid:str, physique:dict):
+    '''
+    유저 정보 업데이트 - physique, RDI 수정
+    --------
+    Output== Input의 physique
+    --------
+    '''
+    def update_user_physique(self, userid: str, physique: dict):
         res= physique.copy()
         new_RDI = self.__calculate_RDI(physique)
         response = self.__table.update_item(
@@ -172,13 +179,15 @@ class UserRepository:
             },
             ReturnValues='UPDATED_NEW'
         )
-        #return response.get('Attributes')
         return res
 
-# 사용
-    ####3 유저 physique 정보 요청
-    # input: userid
-    # output: physique value
+    '''
+    유저 physique 정보 요청
+    --------
+    Output
+    --------
+    해당 userid의 physique 정보
+    '''
     def get_user_physique(self, userid:str):
         response = self.__table.get_item(
             Key={
@@ -189,10 +198,13 @@ class UserRepository:
         )
         return response.get('Item').get('physique')
 
-# 사용
-    ####4 유저 정보 요청
-    # input: userid
-    # output: {user item}
+    '''
+    유저 정보 요청
+    --------
+    Output
+    --------
+    해당 userid 정보 전체
+    '''
     def get_user(self, userid:str) -> dict:
         response = self.__table.get_item(
             Key={
@@ -202,10 +214,14 @@ class UserRepository:
         )
         return response.get('Item')
 
-# 미사용
-    ####5 유저 정보 삭제
-    # input : userID
-    # output : username
+    '''
+    (앱 구현 X)
+    유저 정보 삭제
+    --------
+    Output
+    --------
+    return f'{userid} is deleted'
+    '''
     def delete_user(self, userid:str) -> str:
         response = self.__table.delete_item(
             Key={
@@ -214,13 +230,15 @@ class UserRepository:
             },
             ReturnValues='ALL_OLD'
         )
-        #return response.get('Attributes').get('userid')
         return f'{userid} is deleted'
 
-# 사용
-    ####6 유저 RDI 정보 요청
-    # input: userid
-    # output: RDI value
+    '''
+    유저 RDI 정보 요청
+    --------
+    Output
+    --------
+    해당 userid의 RDI 정보 
+    '''
     def get_user_RDI(self, userid:str) -> dict:
         response = self.__table.get_item(
             Key={
@@ -231,10 +249,14 @@ class UserRepository:
         )
         return {i:round(float(v), 1) for i,v in response.get('Item').get('RDI').items()}
 
-# 미사용
-    ####7 nutr_suppl 수정 - 영양제 추가 등록 및 수정
-    # input: userid, nutr_suppl(prod_code 만 있는 리스트)
-    # output: nutr_suppl
+    '''
+    (앱 구현 X)
+    nutr_suppl 수정 - 유저 별 영양제 추가 등록 및 수정
+    --------
+    Output
+    --------
+    해당 userid의 섭취 영양제 목록 정보
+    '''
     def update_user_nutr_suppl(self, userid:str, nutrsuppl:list) -> list:
         response = self.__table.update_item(
             Key={
@@ -252,10 +274,14 @@ class UserRepository:
         )
         return response.get('Attributes').get('nutr_suppl')
 
-# 미사용
-    ####8 유저 nutr_suppl 정보 요청
-    # input: userid
-    # output: nutr_suppl value
+    '''
+    (앱 구현 X)
+    유저 nutr_suppl 정보 요청
+    --------
+    Output
+    --------
+    해당 userid의 섭취 영양제 목록 정보
+    '''
     def get_user_nutr_suppl(self, userid:str):
         response = self.__table.get_item(
             Key={
@@ -273,8 +299,14 @@ class LogRepository:
         self.__db, self.__s3= db
         self.__table= self.__db.Table('nutriai_test')
 
-# 사용
-    #### S3 저장 공간 생성? 
+    '''
+    S3 파일 서버에 presigned 저장 공간 생성 요청
+    --------
+    Input
+    --------
+    S3 bucket name,
+    저장 경로 및 파일 이름,
+    '''
     def create_presigned_post(self, bucket_name: str, key_name: str, 
             fields= None,
             conditions= None, expiration= 60):
@@ -293,8 +325,14 @@ class LogRepository:
         # The response contains the presigned URL and required fields
         return response
 
-# 사용
-    #### S3 url 접속 권한
+    '''
+    S3 파일 서버에 presigned url 생성 요청
+    --------
+    Input
+    --------
+    S3 bucket name,
+    저장 경로 및 파일 이름,
+    '''
     def create_presigned_url(self, bucket_name: str, key_name: str, expiration= 3600):
         # Generate a presigned URL for the S3 object
         try:
@@ -306,11 +344,20 @@ class LogRepository:
             logging.errer(e)
             return None
         # The response contains the presigned URL
-        print(response)
+        #print(response)
         return response
 
-# 사용
-    ####1 이미지 S3에 업로드
+    '''
+    식단 이미지 S3 파일 서버에 업로드
+    --------
+    Output
+    --------
+    return {'Origin_S3_key': 원본 이미지 S3 Image Key,
+            'Class_type': [Inference 결과, ...],
+            'S3_key': Inference 이미지 S3 Image Key,
+            'link': presigned_url,
+            'food_list': [[Class_type의 상세 음식 이름 정보 리스트], ...]}
+    '''
     def upload_image(self, userid: str, image):
         #return f"{type(image)}"
         img= np.fromstring(image, dtype= np.uint8)
@@ -361,10 +408,15 @@ class LogRepository:
                 'S3_key': obj_name,
                 'link': url,
                 'food_list': answer}
-    
-# 사용
-    # s3 키 접속 권한
-    def get_s3_url_file(self, userid: str, obj_name: str):
+
+    '''
+    Inference 이미지 S3 파일 서버에서 가져오기
+    --------
+    Output
+    --------
+    presigned_url
+    '''
+    def get_s3_url_file(self, obj_name: str):
         url = self.create_presigned_url('nutriai', obj_name)
         if url is not None:
             response = requests.get(url)
@@ -372,9 +424,13 @@ class LogRepository:
         print(response)
         return url
 
-# 사용
-    ######### FOOOD 
-    ####2 음식 영양 성분 정보 요청
+    '''
+    음식 영양 성분 정보 요청
+    --------
+    Output
+    --------
+    해당 음식 영양 성분 정보
+    '''
     def get_food_nutrients(self, food_cat: str, food_name: str):
         response = self.__table.get_item(
             Key={
@@ -385,22 +441,14 @@ class LogRepository:
         ).get('Item').get('nutrients')
 
         return response
-        # DB 수정해서 필요 없어졌다.
-        # res= total
-        # for i in res.keys():
-        #     if i in response.keys():
-        #         res[i]= Decimal(str(round(float(response[i]), 1)))
-        #     else:
-        #         res[i]= Decimal('0')
-        # for j in pcf_status.keys():
-        #     if j in response.keys():
-        #         res[j]= Decimal(str(int(response[j])))
-        # return res
 
-# 사용
-    ####### MEAL log ##########
-    ####3 유저 식단 섭취 로그 등록 ##
-    ###########################
+    '''
+    유저 식단 섭취 로그 등록
+    --------
+    Output
+    --------
+    Inference 해당 음식 영양 성분
+    '''
     def post_meal_log(self, userid:str, image_key:str, class_list: list, food_list: list):
         kst_datetime = (datetime.utcnow() + KST)
         response_put= self.__table.put_item(
@@ -415,7 +463,6 @@ class LogRepository:
         for c, f in zip(class_list, food_list):
             nutr = self.get_food_nutrients(c, f)
             response_nutr+= Counter(nutr)
-            #response_status= self.update_user_meal_nutr_log(userid, nutr)
 
         for i in response_nutr.keys():  
             if i in pcf_status.keys():
@@ -427,11 +474,13 @@ class LogRepository:
         # 음식 영양 성분
         return response
 
-    
-# 사용
-    ####15 get 사용자 영양상태 로그 - 특정 날짜 (식단 - 탄단지)
-    # input : userID, date
-    # output : 
+    '''
+    사용자 영양상태 로그 요청 - 특정 날짜 (식단 - 탄단지)
+    --------
+    Output
+    --------
+    해당 userid의 입력 date의 섭취 칼로리, 탄수화물, 단백질, 지방
+    '''
     def get_user_nutr_log_meal_CPF(self, userid:str, date) -> list:
         response = self.__table.query(
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').eq(f'{date}#NUTRSTATUS#MEAL'),
@@ -440,12 +489,13 @@ class LogRepository:
         )
         return response.get('Items')
 
-
-
-# 사용
-    ####17 get 사용자 영양 상태 로그 - 오늘부터 n일 (식단 + 영양제)
-    # input : userID, number of days
-    # output :
+    '''
+    사용자 영양 상태 로그 요청 - 오늘부터 ndays일 (식단 + 영양제)
+    --------
+    Output
+    --------
+    해당 userid의 ndays 간 평균 섭취 영양 성분 정보
+    '''
     def get_user_nutr_log_ndays(self, userid:str, ndays:int) -> dict:
         kst_date = (datetime.utcnow() + KST).date()
         date_from = kst_date - timedelta(days=ndays-1)
@@ -463,11 +513,16 @@ class LogRepository:
         result= {key: round(float(count[key]/cnt_itmes), 1) for key in count.keys()}
         return result
 
-    
-
-   
-
-    # today status query
+    '''
+    today homepage 필요 정보 요청
+    --------
+    Output
+    --------
+    해당 userid의 username,
+    해당 userid의 RDI,
+    오늘 섭취한 음식,
+    오늘 섭취한 영양 성분 정보
+    '''
     def get_user_today_status(self, userid:str):
         kst_date = (datetime.utcnow() + KST).date()
         # query (NUTRSTATUS#MEAL & #MEAL#)
@@ -475,7 +530,7 @@ class LogRepository:
             KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(kst_date.isoformat()),
             FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
             ExpressionAttributeNames={'#ns': 'nutr_status'},
-            ProjectionExpression='SK, status_type, food_list, #ns' # .Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
+            ProjectionExpression='SK, status_type, food_list, #ns' # ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
         ).get('Items')
         response = self.__table.get_item(
             Key={
@@ -492,11 +547,18 @@ class LogRepository:
                 response['nutr_status'] = item['nutr_status']
             else:
                 pass
-        #return {i:int(v) for i,v in response.get('RDI').items()}
+
         return response
 
-    # 1 week status query
-    # output: {'username','RDI','nutr_status'}
+    '''
+    a week status 필요 정보 요청
+    --------
+    Output
+    --------
+    해당 userid의 username,
+    해당 userid의 RDI,
+    일주일 간 섭취한 영양 성분 정보
+    '''
     def get_user_week_status(self, userid:str):
         # query ( NUTRSTATUS )
         response_nutr = self.get_user_nutr_log_ndays(userid, 7)
@@ -510,8 +572,18 @@ class LogRepository:
         response['nutr_status'] = response_nutr
         return response
 
-    ####### NUTR SUPPL
-    # get 영양제 정보
+    '''
+    영양제 정보 요청
+    --------
+    Input - 영양제 타입과 상품 코드 입력
+    --------
+    nutr_cat: str
+    product_code: str
+    --------
+    Output
+    --------
+    해당 영양제 정보(아이허브 링크 등...)
+    '''
     def get_nutr_suppl(self, nutr_cat:str, product_code:str):
         response = self.__table.get_item(
             Key={
@@ -521,8 +593,14 @@ class LogRepository:
         )
         return response.get('Item')
 
-# 사용
-    #### 유저 영양제 추천
+    '''
+    유저 영양제 추천
+    --------
+    Output
+    --------
+    미네랄, 비타민, 아미노산 타입 별 영양제 3종류 상품 코드,
+    아이허브 링크 반환
+    '''
     def get_recomm_nutrsuppl(self, userid: str):
         # user rdi data
         user_rdi = self.__table.get_item(
@@ -531,7 +609,7 @@ class LogRepository:
                 'SK': f'USER#{userid}#INFO'
             },
             ProjectionExpression='RDI, username'
-        ).get('Item')#.get('RDI')
+        ).get('Item')
         user_rdi_sr = pd.Series(user_rdi.get('RDI'), dtype=float).drop(['Calories', 'Folic_acid', 'Carbohydrate', 'Protein', 'Fat'])
         # user week status
         user_status = self.get_user_nutr_log_ndays(userid, 7)
