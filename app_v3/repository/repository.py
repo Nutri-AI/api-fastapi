@@ -1,4 +1,5 @@
 from collections import Counter
+from app_v3.repository.tablename import *
 from boto3.resources.base import ServiceResource
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key, Attr
@@ -48,13 +49,12 @@ KST= timedelta(hours= 9)
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db, self.__s3= db
-        self.__table = self.__db.Table('nutriai_test')
+        self.__table = self.__db.Table('table_name')
 
     '''
     유저 나이 별 RDI 분류
     --------
     생년월일 -> 나이 계산 -> 나이 별 RDI 기준으로 Partition Key 분류     
-
     '''
     @staticmethod
     def __get_rdi_pk(age):
@@ -89,7 +89,6 @@ class UserRepository:
     유저 RDI 계산
     --------
     나이 별 RDI 기준으로 Partition Key, 성 별 Sort Key -> 유저 별 1일 권장 섭취 칼로리 계산 -> 1일 권장 섭취 탄수화물, 단백질, 지방
-    
     '''
     def __calculate_RDI(self, physique: dict) -> dict:
         user_birth = datetime.strptime(physique['birth'],'%Y-%m-%d')
@@ -297,7 +296,7 @@ class UserRepository:
 class LogRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db, self.__s3= db
-        self.__table= self.__db.Table('nutriai_test')
+        self.__table= self.__db.Table('table_name')
 
     '''
     S3 파일 서버에 presigned 저장 공간 생성 요청
