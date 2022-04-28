@@ -60,4 +60,5 @@ https://fastapi.tiangolo.com/
 13. a week status 필요 정보 요청
 14. 유저 영양제 추천
 ## Database
-### DynamoDB (AWS)
+- DynamoDB (AWS)
+- S3 (AWS)
