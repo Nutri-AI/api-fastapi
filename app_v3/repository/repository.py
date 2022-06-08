@@ -46,6 +46,30 @@ fnames = ["삼겹살구이","라면","비빔밥","짬뽕","냉면","갈치조림
 # 시간 : UtC -> 한국화
 KST= timedelta(hours= 9)
 
+
+fake_user = {
+    'PK': 'USER#faker',
+    'SK': 'USER#faker#info',
+    'username': 'faker',
+    'physique':{
+        'birth' : '4342-13-25',
+        'sex': 'FM',
+        'height': 123,#Decimal('123'),
+        'weight': Decimal('45'),
+        'PAI': 99.0
+    },
+    'RDI': {},
+    'nutr_suppl':[]
+}
+fake_user_status = {
+    'MEAL': [],
+    # 'PK':'USER#faker',
+    # 'SK':'4359-12-42#NUTRSTATUS#MEAL',
+    'RDI':{},
+    'nutr_status':{},
+    'username': 'faker'
+}
+
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db, self.__s3= db
@@ -188,14 +212,15 @@ class UserRepository:
     해당 userid의 physique 정보
     '''
     def get_user_physique(self, userid:str):
-        response = self.__table.get_item(
-            Key={
-                'PK': f'USER#{userid}',
-                'SK': f'USER#{userid}#INFO'
-            },
-            ProjectionExpression='physique'
-        )
-        return response.get('Item').get('physique')
+        # response = self.__table.get_item(
+        #     Key={
+        #         'PK': f'USER#{userid}',
+        #         'SK': f'USER#{userid}#INFO'
+        #     },
+        #     ProjectionExpression='physique'
+        # )
+        # return response.get('Item').get('physique')
+        return fake_user.get('physique')
 
     '''
     유저 정보 요청
@@ -205,13 +230,14 @@ class UserRepository:
     해당 userid 정보 전체
     '''
     def get_user(self, userid:str) -> dict:
-        response = self.__table.get_item(
-            Key={
-                'PK': f'USER#{userid}',
-                'SK': f'USER#{userid}#INFO'
-            }
-        )
-        return response.get('Item')
+        # response = self.__table.get_item(
+        #     Key={
+        #         'PK': f'USER#{userid}',
+        #         'SK': f'USER#{userid}#INFO'
+        #     }
+        # )
+        # return response.get('Item')
+        return fake_user
 
     '''
     (앱 구현 X)
@@ -239,14 +265,15 @@ class UserRepository:
     해당 userid의 RDI 정보 
     '''
     def get_user_RDI(self, userid:str) -> dict:
-        response = self.__table.get_item(
-            Key={
-                'PK': f'USER#{userid}',
-                'SK': f'USER#{userid}#INFO'
-            },
-            ProjectionExpression='RDI'
-        )
-        return {i:round(float(v), 1) for i,v in response.get('Item').get('RDI').items()}
+        # response = self.__table.get_item(
+        #     Key={
+        #         'PK': f'USER#{userid}',
+        #         'SK': f'USER#{userid}#INFO'
+        #     },
+        #     ProjectionExpression='RDI'
+        # )
+        # return {i:round(float(v), 1) for i,v in response.get('Item').get('RDI').items()}
+        return fake_user.get('RDI')
 
     '''
     (앱 구현 X)
@@ -523,31 +550,31 @@ class LogRepository:
     오늘 섭취한 영양 성분 정보
     '''
     def get_user_today_status(self, userid:str):
-        kst_date = (datetime.utcnow() + KST).date()
-        # query (NUTRSTATUS#MEAL & #MEAL#)
-        response_nutr = self.__table.query(
-            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(kst_date.isoformat()),
-            FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
-            ExpressionAttributeNames={'#ns': 'nutr_status'},
-            ProjectionExpression='SK, status_type, food_list, #ns' # ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
-        ).get('Items')
-        response = self.__table.get_item(
-            Key={
-                'PK': f'USER#{userid}',
-                'SK': f'USER#{userid}#INFO'
-            },
-            ProjectionExpression='username, RDI'
-        ).get('Item')
-        response['MEAL'] = list()
-        for i, item in enumerate(response_nutr):
-            if 'food_list' in item.keys():
-                response['MEAL'].append([item['SK'].replace('#MEAL#','T'), item['food_list']])
-            elif item['status_type'] == 'MEAL':
-                response['nutr_status'] = item['nutr_status']
-            else:
-                pass
+        # kst_date = (datetime.utcnow() + KST).date()
+        # # query (NUTRSTATUS#MEAL & #MEAL#)
+        # response_nutr = self.__table.query(
+        #     KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(kst_date.isoformat()),
+        #     FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
+        #     ExpressionAttributeNames={'#ns': 'nutr_status'},
+        #     ProjectionExpression='SK, status_type, food_list, #ns' # ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
+        # ).get('Items')
+        # response = self.__table.get_item(
+        #     Key={
+        #         'PK': f'USER#{userid}',
+        #         'SK': f'USER#{userid}#INFO'
+        #     },
+        #     ProjectionExpression='username, RDI'
+        # ).get('Item')
+        # response['MEAL'] = list()
+        # for i, item in enumerate(response_nutr):
+        #     if 'food_list' in item.keys():
+        #         response['MEAL'].append([item['SK'].replace('#MEAL#','T'), item['food_list']])
+        #     elif item['status_type'] == 'MEAL':
+        #         response['nutr_status'] = item['nutr_status']
+        #     else:
+        #         pass
 
-        return response
+        return fake_user_status
 
     '''
     a week status 필요 정보 요청
