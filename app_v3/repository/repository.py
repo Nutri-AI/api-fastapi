@@ -73,7 +73,7 @@ fake_user_status = {
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db, self.__s3= db
-        self.__table = self.__db.Table('table_name')
+        self.__table = self.__db.Table('NutriAI')
 
     '''
     유저 나이 별 RDI 분류
@@ -457,14 +457,14 @@ class LogRepository:
     --------
     해당 음식 영양 성분 정보
     '''
-    def get_food_nutrients(self, food_cat: str, food_name: str):
+    def get_food(self, food_cat: str, food_name: str):
         response = self.__table.get_item(
             Key={
                 'PK': f'FOOD#{food_cat}',
                 'SK': f'FOOD#{food_name}'
             },
             ProjectionExpression='nutrients'
-        ).get('Item').get('nutrients')
+        ).get('Item')
 
         return response
 
@@ -474,21 +474,32 @@ class LogRepository:
     Output
     --------
     Inference 해당 음식 영양 성분
+    hhw -edit
     '''
-    def post_meal_log(self, userid:str, image_key:str, class_list: list, food_list: list):
+    def post_meal_log(self, userid:str,  class_list: list, food_list: list, image_key:str = 'none'):
         kst_datetime = (datetime.utcnow() + KST)
-        response_put= self.__table.put_item(
+        if image_key == 'none':
+            response_put= self.__table.put_item(
             Item={
                 'PK': f'USER#{userid}',
                 'SK': f'{kst_datetime.date().isoformat()}#MEAL#{kst_datetime.time().isoformat()}',
-                'photo': image_key,
                 'food_list': food_list
-            }
-        )
+                }
+            )
+        else:
+            response_put= self.__table.put_item(
+                Item={
+                    'PK': f'USER#{userid}',
+                    'SK': f'{kst_datetime.date().isoformat()}#MEAL#{kst_datetime.time().isoformat()}',
+                    'photo': image_key,
+                    'food_list': food_list
+                }
+            )
         response_nutr= Counter(total)
         for c, f in zip(class_list, food_list):
-            nutr = self.get_food_nutrients(c, f)
+            nutr = self.get_food(c, f).get('nutrients')
             response_nutr+= Counter(nutr)
+            response_status = self.update_user_meal_nutr_log(userid, nutr)
 
         for i in response_nutr.keys():  
             if i in pcf_status.keys():
@@ -499,6 +510,37 @@ class LogRepository:
         response= {'nutrients': response_nutr}
         # 음식 영양 성분
         return response
+
+    ####유저 영양 상태 식단 로그 입력 & 업데이트
+    def update_user_meal_nutr_log(self, userid:str, food_nutrients:dict):
+        kst_date = (datetime.utcnow() + KST).date()
+        try:
+            old_status = self.__table.get_item(
+                Key={
+                    'PK': f'USER#{userid}',
+                    'SK': f'{kst_date}#NUTRSTATUS#MEAL'
+                }
+            ).get('Item').get('nutr_status')
+        except:
+            old_status = base_rdi
+        new_status = Counter(old_status) + Counter(food_nutrients)
+        response = self.__table.update_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'{kst_date}#NUTRSTATUS#MEAL'
+            },
+            UpdateExpression='''
+                SET
+                    nutr_status = :new_nutr_status,
+                    status_type = :type
+            ''',
+            ExpressionAttributeValues={
+                ':new_nutr_status' : new_status,
+                ':type' : 'MEAL'
+            },
+            ReturnValues='ALL_NEW'
+        )
+        return response.get('Attributes')
 
     '''
     사용자 영양상태 로그 요청 - 특정 날짜 (식단 - 탄단지)
@@ -550,29 +592,29 @@ class LogRepository:
     오늘 섭취한 영양 성분 정보
     '''
     def get_user_today_status(self, userid:str):
-        # kst_date = (datetime.utcnow() + KST).date()
-        # # query (NUTRSTATUS#MEAL & #MEAL#)
-        # response_nutr = self.__table.query(
-        #     KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(kst_date.isoformat()),
-        #     FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
-        #     ExpressionAttributeNames={'#ns': 'nutr_status'},
-        #     ProjectionExpression='SK, status_type, food_list, #ns' # ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
-        # ).get('Items')
-        # response = self.__table.get_item(
-        #     Key={
-        #         'PK': f'USER#{userid}',
-        #         'SK': f'USER#{userid}#INFO'
-        #     },
-        #     ProjectionExpression='username, RDI'
-        # ).get('Item')
-        # response['MEAL'] = list()
-        # for i, item in enumerate(response_nutr):
-        #     if 'food_list' in item.keys():
-        #         response['MEAL'].append([item['SK'].replace('#MEAL#','T'), item['food_list']])
-        #     elif item['status_type'] == 'MEAL':
-        #         response['nutr_status'] = item['nutr_status']
-        #     else:
-        #         pass
+        kst_date = (datetime.utcnow() + KST).date()
+        # query (NUTRSTATUS#MEAL & #MEAL#)
+        response_nutr = self.__table.query(
+            KeyConditionExpression=Key('PK').eq(f'USER#{userid}') & Key('SK').begins_with(kst_date.isoformat()),
+            FilterExpression=Attr('status_type').ne('SUPPLTAKE') & Attr('nutr_suppl_take').not_exists(),
+            ExpressionAttributeNames={'#ns': 'nutr_status'},
+            ProjectionExpression='SK, status_type, food_list, #ns' # ns.Calories, #ns.Carbohydrate, #ns.Protein, #ns.Fat'
+        ).get('Items')
+        response = self.__table.get_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'USER#{userid}#INFO'
+            },
+            ProjectionExpression='username, RDI'
+        ).get('Item')
+        response['MEAL'] = list()
+        for i, item in enumerate(response_nutr):
+            if 'food_list' in item.keys():
+                response['MEAL'].append([item['SK'].replace('#MEAL#','T'), item['food_list']])
+            elif item['status_type'] == 'MEAL':
+                response['nutr_status'] = item['nutr_status']
+            else:
+                pass
 
         return fake_user_status
 
@@ -685,3 +727,36 @@ class LogRepository:
             else:
                 pass
         return response
+    # hhw edit
+    def get_barcode_data(self, bcode: str):
+        try:
+            response = self.__table.get_item(
+                Key = {
+                    'PK':'BRCD#brcd',
+                    'SK':f'BRCD#{bcode}'
+                },
+                ProjectionExpression = 'cmpny, food_name, food_cat'
+            ).get('Item')
+            return response
+            
+        except ClientError as e:
+            if e.response['ResponseMetadata']['HTTPStatusCode'] == 404: 
+                return 'Product does not exist'
+            else: 
+                raise e
+    
+    def log_barcode_product(self, userid: str, bcode: str):
+        product = self.get_barcode_data(bcode)
+        try:
+            response = self.get_food(product.get('food_cat'), product.get('food_name'))
+        except ClientError as e:
+            if e.response['ResponseMetadata']['HTTPStatusCode'] == 404: 
+                return 'Product does not exist'
+            else: 
+                raise e
+        self.post_meal_log(userid, [response.get('food_cat')],[response.get['food_name']])
+        return product
+
+        
+
+
