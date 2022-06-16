@@ -256,7 +256,7 @@ class LogRouter:
         def get_barcode_data(bcode: str):
             return self.__domain.get_barcode_data(bcode)
 
-        @api_router.get('/barcode/product')
+        @api_router.post('/barcode/product/{userid}/{bcode}')
         def log_barcode_product(userid: str, bcode: str):
             return self.__domain.log_barcode_product(userid, bcode)
 

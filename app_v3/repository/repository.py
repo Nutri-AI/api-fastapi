@@ -40,7 +40,7 @@ pcf_status= {
 #         "stir_fried_anchovy","sitr_fried_pork","salad","ice_americano","Bottled_Beer","Canned_Beer",
 #         "Draft_Beer","Fried_Chicken","Tteokbokki","Cabbage_Kimchi","Radish_Kimchi", "No_detect"]
 
-fnames = ["삼겹살구이","라면","비빔밥","짬뽕","냉면","갈치조림","달걀찜",
+fnames = ["삼겹살구이","라면","비빔밥류","짬뽕","냉면","갈치조림","달걀찜",
         "달걀국","짜장면","김치찌개","잡곡밥",
         "설렁탕","시금치무침","피자","족발","메추리알장조림","양념치킨",
         "미역국","된장찌개","콩자반","연근조림",
@@ -49,30 +49,6 @@ fnames = ["삼겹살구이","라면","비빔밥","짬뽕","냉면","갈치조림
 
 # 시간 : UtC -> 한국화
 KST= timedelta(hours= 9)
-
-
-fake_user = {
-    'PK': 'USER#faker',
-    'SK': 'USER#faker#info',
-    'username': 'faker',
-    'physique':{
-        'birth' : '4342-13-25',
-        'sex': 'FM',
-        'height': 123,#Decimal('123'),
-        'weight': Decimal('45'),
-        'PAI': 99.0
-    },
-    'RDI': {},
-    'nutr_suppl':[]
-}
-fake_user_status = {
-    'MEAL': [],
-    # 'PK':'USER#faker',
-    # 'SK':'4359-12-42#NUTRSTATUS#MEAL',
-    'RDI':{},
-    'nutr_status':{},
-    'username': 'faker'
-}
 
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
@@ -216,15 +192,14 @@ class UserRepository:
     해당 userid의 physique 정보
     '''
     def get_user_physique(self, userid:str):
-        # response = self.__table.get_item(
-        #     Key={
-        #         'PK': f'USER#{userid}',
-        #         'SK': f'USER#{userid}#INFO'
-        #     },
-        #     ProjectionExpression='physique'
-        # )
-        # return response.get('Item').get('physique')
-        return fake_user.get('physique')
+        response = self.__table.get_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'USER#{userid}#INFO'
+            },
+            ProjectionExpression='physique'
+        )
+        return response.get('Item').get('physique')
 
     '''
     유저 정보 요청
@@ -234,14 +209,13 @@ class UserRepository:
     해당 userid 정보 전체
     '''
     def get_user(self, userid:str) -> dict:
-        # response = self.__table.get_item(
-        #     Key={
-        #         'PK': f'USER#{userid}',
-        #         'SK': f'USER#{userid}#INFO'
-        #     }
-        # )
-        # return response.get('Item')
-        return fake_user
+        response = self.__table.get_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'USER#{userid}#INFO'
+            }
+        )
+        return response.get('Item')
 
     '''
     (앱 구현 X)
@@ -269,15 +243,14 @@ class UserRepository:
     해당 userid의 RDI 정보 
     '''
     def get_user_RDI(self, userid:str) -> dict:
-        # response = self.__table.get_item(
-        #     Key={
-        #         'PK': f'USER#{userid}',
-        #         'SK': f'USER#{userid}#INFO'
-        #     },
-        #     ProjectionExpression='RDI'
-        # )
-        # return {i:round(float(v), 1) for i,v in response.get('Item').get('RDI').items()}
-        return fake_user.get('RDI')
+        response = self.__table.get_item(
+            Key={
+                'PK': f'USER#{userid}',
+                'SK': f'USER#{userid}#INFO'
+            },
+            ProjectionExpression='RDI'
+        )
+        return {i:round(float(v), 1) for i,v in response.get('Item').get('RDI').items()}
 
     '''
     (앱 구현 X)
@@ -469,7 +442,6 @@ class LogRepository:
             },
             ProjectionExpression='PK, SK'
         ).get('Item')
-        print(response)
 
         return response
 
@@ -624,7 +596,7 @@ class LogRepository:
             else:
                 pass
 
-        return fake_user_status
+        return response
 
     '''
     a week status 필요 정보 요청
