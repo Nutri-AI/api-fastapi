@@ -15,6 +15,10 @@ from datetime import datetime, timedelta
 
 from app_v3.yolov3_onnx_inf import detect
 
+base_rdi= {
+    'Dietary_Fiber': Decimal('0'), 'Calcium': Decimal('0'), 'Iron': Decimal('0'), 'Magnesium': Decimal('0'), 'Phosphorus': Decimal('0'), 'Potassium': Decimal('0'), 'Sodium': Decimal('0'), 'Zinc': Decimal('0'), 'Copper': Decimal('0'), 'Manganese': Decimal('0'), 'Selenium': Decimal('0'), 'Vitamin_A': Decimal('0'), 'Vitamin_D': Decimal('0'), 'Niacin': Decimal('0'), 'Folic_acid': Decimal('0'), 'Vitamin_B12': Decimal('0'), 'Vitamin_B6': Decimal('0'), 'Vitamin_C': Decimal('0'), 'Vitamin_E': Decimal('0'), 'Vitamin_K': Decimal('0'), 'Leucine': Decimal('0'), 'Iso_Leucine': Decimal('0'), 'Histidine': Decimal('0'), 'Linoleic_Acid': Decimal('0'), 'Alpha_Linolenic_Acid': Decimal('0'), 'Lysine': Decimal('0'), 'Methionine': Decimal('0'), 'Phenylalanine+Tyrosine': Decimal('0'), 'Threonine': Decimal('0'), 'Valine': Decimal('0')
+}
+
 total= {
     'Protein': 0, 'Fat': 0, 'Carbohydrate': 0, 'Dietary_Fiber': 0, 'Calcium': 0,
     'Iron': 0, 'Magnesium': 0, 'Phosphorus': 0, 'Potassium': 0, 'Sodium': 0, 'Zinc': 0,
@@ -463,8 +467,9 @@ class LogRepository:
                 'PK': f'FOOD#{food_cat}',
                 'SK': f'FOOD#{food_name}'
             },
-            ProjectionExpression='nutrients'
+            ProjectionExpression='PK, SK'
         ).get('Item')
+        print(response)
 
         return response
 
@@ -476,9 +481,9 @@ class LogRepository:
     Inference 해당 음식 영양 성분
     hhw -edit
     '''
-    def post_meal_log(self, userid:str,  class_list: list, food_list: list, image_key:str = 'none'):
+    def post_meal_log(self, userid:str,  class_list: list = [], food_list: list = [], image_key:str = 'none', brcd_nutr: dict = {}):
         kst_datetime = (datetime.utcnow() + KST)
-        if image_key == 'none':
+        if brcd_nutr:
             response_put= self.__table.put_item(
             Item={
                 'PK': f'USER#{userid}',
@@ -486,6 +491,9 @@ class LogRepository:
                 'food_list': food_list
                 }
             )
+            response_nutr= Counter(total)
+            response_nutr+= Counter(brcd_nutr)
+            response_status = self.update_user_meal_nutr_log(userid, response_nutr)
         else:
             response_put= self.__table.put_item(
                 Item={
@@ -495,12 +503,12 @@ class LogRepository:
                     'food_list': food_list
                 }
             )
-        response_nutr= Counter(total)
-        for c, f in zip(class_list, food_list):
-            nutr = self.get_food(c, f).get('nutrients')
-            response_nutr+= Counter(nutr)
-            response_status = self.update_user_meal_nutr_log(userid, nutr)
-
+            response_nutr= Counter(total)
+            for c, f in zip(class_list, food_list):
+                nutr = self.get_food(c, f).get('nutrients')
+                response_nutr+= Counter(nutr)
+                response_status = self.update_user_meal_nutr_log(userid, response_nutr)
+        print(response_nutr.keys())
         for i in response_nutr.keys():  
             if i in pcf_status.keys():
                 response_nutr[i]= round(float(response_nutr[i]))
@@ -735,7 +743,7 @@ class LogRepository:
                     'PK':'BRCD#brcd',
                     'SK':f'BRCD#{bcode}'
                 },
-                ProjectionExpression = 'cmpny, food_name, food_cat'
+                ProjectionExpression = 'cmpny, food_name, food_cat, nutrients'
             ).get('Item')
             return response
             
@@ -747,15 +755,12 @@ class LogRepository:
     
     def log_barcode_product(self, userid: str, bcode: str):
         product = self.get_barcode_data(bcode)
+        food_name = [product.get('food_name')]
         try:
-            response = self.get_food(product.get('food_cat'), product.get('food_name'))
+            res = self.post_meal_log(userid, food_list= food_name, brcd_nutr= product.get('nutrients'))
         except ClientError as e:
-            if e.response['ResponseMetadata']['HTTPStatusCode'] == 404: 
-                return 'Product does not exist'
-            else: 
-                raise e
-        self.post_meal_log(userid, [response.get('food_cat')],[response.get['food_name']])
-        return product
+            raise e       
+        return {'food_name': product.get('food_name'), 'cmpny': product.get('cmpny')}
 
         
 
