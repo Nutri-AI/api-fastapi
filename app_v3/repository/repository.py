@@ -73,7 +73,7 @@ fake_user_status = {
 class UserRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db, self.__s3= db
-        self.__table = self.__db.Table('NutriAI')
+        self.__table = self.__db.Table(table_name)
 
     '''
     유저 나이 별 RDI 분류
@@ -323,7 +323,7 @@ class UserRepository:
 class LogRepository:
     def __init__(self, db: ServiceResource)-> None:
         self.__db, self.__s3= db
-        self.__table= self.__db.Table('table_name')
+        self.__table= self.__db.Table(table_name)
 
     '''
     S3 파일 서버에 presigned 저장 공간 생성 요청
