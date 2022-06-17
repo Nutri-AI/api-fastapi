@@ -501,8 +501,8 @@ class LogRepository:
                 'PK': f'FOOD#{food_cat}',
                 'SK': f'FOOD#{food_name}'
             },
-            ProjectionExpression='nutrients'
-        ).get('Item').get('nutrients')
+            ProjectionExpression='PK, SK, nutrients'
+        ).get('Item')
 
         return response
 
@@ -514,20 +514,9 @@ class LogRepository:
     Inference 해당 음식 영양 성분
     hhw -edit
     '''
-    def post_meal_log(self, userid:str,  class_list: list = [], food_list: list = [], image_key:str = 'none', brcd_nutr: dict = {}):
+    def post_meal_log(self, userid:str,  class_list: list = [], food_list: list = [], image_key:str = '', brcd_nutr: dict = {}):
         kst_datetime = (datetime.utcnow() + KST)
-        if brcd_nutr:
-            response_put= self.__table.put_item(
-            Item={
-                'PK': f'USER#{userid}',
-                'SK': f'{kst_datetime.date().isoformat()}#MEAL#{kst_datetime.time().isoformat()}',
-                'food_list': food_list
-                }
-            )
-            response_nutr= Counter(total)
-            response_nutr+= Counter(brcd_nutr)
-            response_status = self.update_user_meal_nutr_log(userid, response_nutr)
-        else:
+        if  image_key:
             response_put= self.__table.put_item(
                 Item={
                     'PK': f'USER#{userid}',
@@ -536,11 +525,26 @@ class LogRepository:
                     'food_list': food_list
                 }
             )
+        else:    
+            response_put= self.__table.put_item(
+                Item={
+                    'PK': f'USER#{userid}',
+                    'SK': f'{kst_datetime.date().isoformat()}#MEAL#{kst_datetime.time().isoformat()}',
+                    'food_list': food_list
+                    }
+            )
+        
+        if brcd_nutr:
+            response_nutr= Counter(total)
+            response_nutr+= Counter(brcd_nutr)
+            response_status = self.update_user_meal_nutr_log(userid, response_nutr)
+        else:
             response_nutr= Counter(total)
             for c, f in zip(class_list, food_list):
-                nutr = self.get_food(c, f)
+                nutr = self.get_food(c, f).get('nutrients')
                 response_nutr+= Counter(nutr)
                 response_status = self.update_user_meal_nutr_log(userid, response_nutr)
+        
         for i in response_nutr.keys():  
             if i in pcf_status.keys():
                 response_nutr[i]= round(float(response_nutr[i]))
