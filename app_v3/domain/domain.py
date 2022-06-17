@@ -24,7 +24,6 @@ class MealLog(BaseModel):
     image_key: str
     class_list: List[str]
     food_list: List[str]
-    brcd_nutr: dict
 
 class UserDomain():
     def __init__(self, repository: UserRepository):
@@ -119,11 +118,10 @@ class LogDomain():
     S3 Image Key, Inference Class_type, Class_type 상세 음식 이름만 전달
     '''
     def post_meal_log(self, userid: str, request):
-        image_key= request['image_key']
-        class_list= request['class_list']
-        food_list= request['food_list']
-        brcd_nutr= request['brcd_nutr']
-        return self.__repository.post_meal_log(userid, class_list, food_list, image_key, brcd_nutr)
+        img_key= request['image_key']
+        class_f= request['class_list']
+        food= request['food_list']
+        return self.__repository.post_meal_log(userid, class_list=class_f, food_list=food, image_key=img_key)
 
     '''
     사용자 영양상태 로그 요청 - 특정 날짜 (식단 - 탄단지)
