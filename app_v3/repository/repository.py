@@ -203,7 +203,6 @@ class UserRepository:
         request['SK'] = f'USER#{userid}#INFO'
         request['RDI'] = self.__calculate_RDI(request.get('physique'))
         request['nutr_suppl'] = list()
-
         self.__table.put_item(
             Item=request,
             ConditionExpression=Attr('PK').not_exists() & Attr('SK').not_exists()
@@ -501,7 +500,7 @@ class LogRepository:
                 'PK': f'FOOD#{food_cat}',
                 'SK': f'FOOD#{food_name}'
             },
-            ProjectionExpression='PK, SK'
+            # ProjectionExpression='PK, SK, nutrients'
         ).get('Item')
 
         return response
@@ -516,6 +515,7 @@ class LogRepository:
     '''
     def post_meal_log(self, userid:str,  class_list: list = [], food_list: list = [], image_key:str = 'none', brcd_nutr: dict = {}):
         kst_datetime = (datetime.utcnow() + KST)
+        # 바코드로 식단 등록
         if brcd_nutr:
             response_put= self.__table.put_item(
             Item={
@@ -528,6 +528,8 @@ class LogRepository:
             response_nutr+= Counter(brcd_nutr)
             response_status = self.update_user_meal_nutr_log(userid, response_nutr)
         else:
+        # 사진 or 서치로 식단 등록
+            # 음식 로그 등록
             response_put= self.__table.put_item(
                 Item={
                     'PK': f'USER#{userid}',
@@ -536,10 +538,15 @@ class LogRepository:
                     'food_list': food_list
                 }
             )
+            # 음식 영양성분 db에서 가져오기
             response_nutr= Counter(total)
+            print(class_list)
+            print(food_list)
             for c, f in zip(class_list, food_list):
+                print(c, f)
                 nutr = self.get_food(c, f).get('nutrients')
                 response_nutr+= Counter(nutr)
+                # 사용자 영양상태로그에 더해주기
                 response_status = self.update_user_meal_nutr_log(userid, response_nutr)
         print(response_nutr.keys())
         for i in response_nutr.keys():  
