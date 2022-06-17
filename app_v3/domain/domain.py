@@ -24,7 +24,7 @@ class MealLog(BaseModel):
     image_key: str
     class_list: List[str]
     food_list: List[str]
-    brcd_nutr: dict()
+    brcd_nutr: dict
 
 class UserDomain():
     def __init__(self, repository: UserRepository):

@@ -541,7 +541,6 @@ class LogRepository:
                 nutr = self.get_food(c, f)
                 response_nutr+= Counter(nutr)
                 response_status = self.update_user_meal_nutr_log(userid, response_nutr)
-        print(response_nutr.keys())
         for i in response_nutr.keys():  
             if i in pcf_status.keys():
                 response_nutr[i]= round(float(response_nutr[i]))
