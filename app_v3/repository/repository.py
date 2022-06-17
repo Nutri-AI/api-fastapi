@@ -15,19 +15,80 @@ from datetime import datetime, timedelta
 
 from app_v3.yolov3_onnx_inf import detect
 
+
+
+# DB에 저장하는 영양소 이름
+ntrn_db = {
+    'Calories(kcal)': ['에너지(㎉)'], 
+    'Carbohydrate(g)': ['탄수화물(g)'], 
+    'Dietary_fiber(g)': ['총 식이섬유(g)'], 
+    'Protein(g)': ['단백질(g)'], 
+    'Fat(g)': ['지방(g)'], 
+    'Linoleic_acid(g)': ['리놀레산(18:2(n-6)c)(g)', '리놀레산(18:2(n-6)c)(g)'], 
+    'Alpha-linolenic_acid(g)': ['알파 리놀렌산(18:3(n-3))(g)', '알파 리놀렌산(18:3(n-3))(㎎)'], 
+    'EPA+DHA(mg)': [
+        '에이코사펜타에노산(20:5(n-3))(g)', '도코사헥사에노산(22:6(n-3))(g)',
+        '에이코사펜타에노산(20:5(n-3))(㎎)', '도코사헥사에노산(22:6(n-3))(㎎)', 'EPA와 DHA의 합(㎎)', '오메가 3 지방산(g)'
+    ], 
+    'Methionine(g)': ['메티오닌(㎎)'], 
+    'Leucine(g)': ['류신(㎎)'], 
+    'Isoleucine(g)': ['이소류신(㎎)'],
+    'Valine(g)': ['발린(㎎)'], 
+    'Lysine(g)': ['라이신(㎎)'], 
+    'Phenylalanine+Tyrosine(g)': ['페닐알라닌(㎎)', '티로신(㎎)'], 
+    'Threonine(g)': ['트레오닌(㎎)'], 
+    'Tryptophan(g)': ['트립토판(㎎)'], 
+    'Histidine(g)': ['히스티딘(㎎)'],
+    'Vitamin_A(ug)': ['레티놀(㎍)', '비타민 A(㎍ RE)'], 
+    'Vitamin_D(ug)': ['비타민 D(D2+D3)(㎍)', '비타민 D3(㎍)', '비타민 D1(㎍)'], 
+    'Vitamin_E(mg)': ['토코페롤(㎎)', '토코트리에놀(㎎)', '비타민 E(㎎)', '비타민 E(㎎ α-TE)'], 
+    'Vitamin_K(ug)': ['비타민 K(㎎)', '비타민 K(㎍)', '비타민 K1(㎍)', '비타민 K2(㎍)'], 
+    'Vitamin_C(mg)': ['비타민 C(g)', '비타민 C(㎎)'], 
+    'Vitamin_B1(mg)': ['비타민 B1(㎎)', '비타민 B1(㎍)'], 
+    'Vitamin_B2(mg)': ['비타민 B2(㎎)', '비타민 B2(㎍)'], 
+    'Niacin(mg)': ['나이아신(㎎ NE)', '나이아신(㎎)'], 
+    'Vitamin_B6(mg)': ['비타민 B6(㎎)', '비타민 B6(㎍)'], 
+    'Folic_acid(ug)': ['엽산(DFE)(㎍)'],
+    'Vitamin_B12(ug)': ['비타민 B12(㎎)', '비타민 B12(㎍)'], 
+    'Pantothenic_acid(mg)': ['판토텐산(㎎)', '판토텐산(㎍)'], 
+    'Biotin(ug)': ['비오틴(㎍)'], 
+    'Calcium(mg)': ['칼슘(㎎)'], 
+    'Phosphorus(mg)': ['인(㎎)'], 
+    'Sodium(mg)': ['나트륨(㎎)'], 
+    'Chloride(mg)': ['염소(㎎)'], 
+    'Potassium(mg)': ['칼륨(㎎)'], 
+    'Magnesium(mg)': ['마그네슘(㎎)'],
+    'Iron(mg)': ['철(㎎)', '철(㎍)'], 
+    'Zinc(mg)': ['아연(㎎)'], 
+    'Copper(ug)': ['구리(㎎)', '구리(㎍)'], 
+    'Manganese(mg)': ['망간(㎎)', '망간(㎍)'], 
+    'Iodine(ug)': ['요오드(㎍)'], 
+    'Selenium(ug)': ['셀레늄(㎍)']
+}
 base_rdi= {
-    'Dietary_Fiber': Decimal('0'), 'Calcium': Decimal('0'), 'Iron': Decimal('0'), 'Magnesium': Decimal('0'), 'Phosphorus': Decimal('0'), 'Potassium': Decimal('0'), 'Sodium': Decimal('0'), 'Zinc': Decimal('0'), 'Copper': Decimal('0'), 'Manganese': Decimal('0'), 'Selenium': Decimal('0'), 'Vitamin_A': Decimal('0'), 'Vitamin_D': Decimal('0'), 'Niacin': Decimal('0'), 'Folic_acid': Decimal('0'), 'Vitamin_B12': Decimal('0'), 'Vitamin_B6': Decimal('0'), 'Vitamin_C': Decimal('0'), 'Vitamin_E': Decimal('0'), 'Vitamin_K': Decimal('0'), 'Leucine': Decimal('0'), 'Iso_Leucine': Decimal('0'), 'Histidine': Decimal('0'), 'Linoleic_Acid': Decimal('0'), 'Alpha_Linolenic_Acid': Decimal('0'), 'Lysine': Decimal('0'), 'Methionine': Decimal('0'), 'Phenylalanine+Tyrosine': Decimal('0'), 'Threonine': Decimal('0'), 'Valine': Decimal('0')
+    'Dietary_Fiber': Decimal('0'), 'Calcium': Decimal('0'), 'Iron': Decimal('0'), 
+    'Magnesium': Decimal('0'), 'Phosphorus': Decimal('0'), 'Potassium': Decimal('0'), 
+    'Sodium': Decimal('0'), 'Zinc': Decimal('0'), 'Copper': Decimal('0'), 
+    'Manganese': Decimal('0'), 'Selenium': Decimal('0'), 'Vitamin_A': Decimal('0'), 
+    'Vitamin_D': Decimal('0'), 'Niacin': Decimal('0'), 'Folic_acid': Decimal('0'), 
+    'Vitamin_B12': Decimal('0'), 'Vitamin_B6': Decimal('0'), 'Vitamin_C': Decimal('0'), 
+    'Vitamin_E': Decimal('0'), 'Vitamin_K': Decimal('0'), 'Leucine': Decimal('0'), 
+    'Iso_Leucine': Decimal('0'), 'Histidine': Decimal('0'), 'Linoleic_Acid': Decimal('0'), 
+    'Alpha_Linolenic_Acid': Decimal('0'), 'Lysine': Decimal('0'), 'Methionine': Decimal('0'), 
+    'Phenylalanine+Tyrosine': Decimal('0'), 'Threonine': Decimal('0'), 'Valine': Decimal('0')
 }
 
-total= {
-    'Protein': 0, 'Fat': 0, 'Carbohydrate': 0, 'Dietary_Fiber': 0, 'Calcium': 0,
-    'Iron': 0, 'Magnesium': 0, 'Phosphorus': 0, 'Potassium': 0, 'Sodium': 0, 'Zinc': 0,
-    'Copper': 0, 'Manganese': 0, 'Selenium': 0, 'Vitamin_A': 0, 'Vitamin_D': 0, 'Niacin': 0,
-    'Folic_acid': 0, 'Vitamin_B12': 0, 'Vitamin_B6': 0, 'Vitamin_C': 0, 'Vitamin_E': 0,
-    'Vitamin_K': 0, 'Leucine': 0, 'Iso_Leucine': 0, 'Histidine': 0, 'Linoleic_Acid': 0, 
-    'Alpha_Linolenic_Acid': 0, 'Lysine': 0, 'Methionine': 0, 'Phenylalanine+Tyrosine': 0,
-    'Threonine': 0, 'Valine': 0, 'Cholesterol': 0, 'Calories': 0
-    }
+total = {
+    'Calories(kcal)': 0, 'Carbohydrate(g)': 0, 'Dietary_fiber(g)': 0, 'Protein(g)': 0, 'Fat(g)': 0, 
+    'Linoleic_acid(g)': 0, 'Alpha-linolenic_acid(g)': 0, 'EPA+DHA(mg)': 0, 'Methionine(g)': 0, 
+    'Leucine(g)': 0, 'Isoleucine(g)': 0,'Valine(g)': 0, 'Lysine(g)': 0, 'Phenylalanine+Tyrosine(g)': 0, 
+    'Threonine(g)': 0, 'Tryptophan(g)': 0, 'Histidine(g)': 0,'Vitamin_A(ug)': 0, 'Vitamin_D(ug)': 0, 
+    'Vitamin_E(mg)': 0, 'Vitamin_K(ug)': 0, 'Vitamin_C(mg)': 0, 'Vitamin_B1(mg)': 0, 'Vitamin_B2(mg)': 0, 
+    'Niacin(mg)': 0, 'Vitamin_B6(mg)': 0, 'Folic_acid(ug)': 0,'Vitamin_B12(ug)': 0, 'Pantothenic_acid(mg)': 0, 
+    'Biotin(ug)': 0, 'Calcium(mg)': 0, 'Phosphorus(mg)': 0, 'Sodium(mg)': 0, 'Chloride(mg)': 0, 
+    'Potassium(mg)': 0, 'Magnesium(mg)': 0,'Iron(mg)': 0, 'Zinc(mg)': 0, 'Copper(ug)': 0, 
+    'Manganese(mg)': 0, 'Iodine(ug)': 0, 'Selenium(ug)': 0
+}
 
 pcf_status= {
     'Protein': 0, 'Fat': 0, 'Calories': 0, 'Carbohydrate': 0
@@ -40,12 +101,12 @@ pcf_status= {
 #         "stir_fried_anchovy","sitr_fried_pork","salad","ice_americano","Bottled_Beer","Canned_Beer",
 #         "Draft_Beer","Fried_Chicken","Tteokbokki","Cabbage_Kimchi","Radish_Kimchi", "No_detect"]
 
-fnames = ["삼겹살구이","라면","비빔밥류","짬뽕","냉면","갈치조림","달걀찜",
-        "달걀국","짜장면","김치찌개","잡곡밥",
-        "설렁탕","시금치무침","피자","족발","메추리알장조림","양념치킨",
-        "미역국","된장찌개","콩자반","연근조림",
-        "멸치볶음","제육볶음","샐러드","아메리카노","맥주","맥주",
-        "맥주","후라이드치킨","떡볶이","배추김치","깍두기"]
+fnames = ["삼겹살","라면류","비빔밥류","-","-","갈치구이","달걀찜",
+        "-","-","김치찌개","쌀밥.잡곡밥류",
+        "곰탕","-","피자류","-","-","치킨류",
+        "미역국","된장찌개","-","-",
+        "멸치볶음","-","샐러드","커피류","-","-",
+        "-","치킨류","떡볶이류","김치","-"]
 
 # 시간 : UtC -> 한국화
 KST= timedelta(hours= 9)
