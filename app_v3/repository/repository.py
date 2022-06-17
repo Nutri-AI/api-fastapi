@@ -501,8 +501,8 @@ class LogRepository:
                 'PK': f'FOOD#{food_cat}',
                 'SK': f'FOOD#{food_name}'
             },
-            ProjectionExpression='PK, SK, nutrients'
-        ).get('Item')
+            ProjectionExpression='nutrients'
+        ).get('Item').get('nutrients')
 
         return response
 
@@ -541,7 +541,7 @@ class LogRepository:
         else:
             response_nutr= Counter(total)
             for c, f in zip(class_list, food_list):
-                nutr = self.get_food(c, f).get('nutrients')
+                nutr = self.get_food(c, f)
                 response_nutr+= Counter(nutr)
                 response_status = self.update_user_meal_nutr_log(userid, response_nutr)
         
