@@ -1,7 +1,6 @@
 FROM python:3.9
 
 RUN apt-get update
-RUN apt-get update
 RUN apt-get install ffmpeg libsm6 libxext6  -y
 RUN pip install fastapi
 RUN pip install uvicorn
@@ -24,6 +23,6 @@ RUN pip install tqdm>=4.41.0
 RUN pip install pandas>=1.1.4
 RUN pip install seaborn>=0.11.0
 
-#WORKDIR /workspace
+WORKDIR /workspace
 
-#CMD uvicorn app_v2.main:app --reload --host=0.0.0.0 
+CMD uvicorn app_v3.main:app --reload --host=0.0.0.0 

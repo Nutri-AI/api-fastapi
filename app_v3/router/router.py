@@ -174,9 +174,9 @@ class LogRouter:
         food_cat: str,
         food_name: str
         '''
-        @api_router.get('/get/food/nutrients')
-        def get_food_nutrients(food_cat: str, food_name: str):
-            return self.__domain.get_food_nutrients(food_cat, food_name)
+        @api_router.get('/get/food')
+        def get_food(food_cat: str, food_name: str):
+            return self.__domain.get_food(food_cat, food_name)
 
         '''
         유저 식단 섭취 로그 등록
@@ -251,5 +251,13 @@ class LogRouter:
         @api_router.get('/recommend/nutrients/{userid}')
         def get_recomm_nutrsuppl(userid: str):
             return self.__domain.get_recomm_nutrsuppl(userid)
+
+        @api_router.get('/get/barcode/product')
+        def get_barcode_data(bcode: str):
+            return self.__domain.get_barcode_data(bcode)
+
+        @api_router.post('/barcode/product/{userid}/{bcode}')
+        def log_barcode_product(userid: str, bcode: str):
+            return self.__domain.log_barcode_product(userid, bcode)
 
         return api_router

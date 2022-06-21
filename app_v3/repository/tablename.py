@@ -1,1 +1,1 @@
-table_name= 'nutriai_test'
+table_name= 'NutriAI'
