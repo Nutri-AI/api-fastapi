@@ -106,8 +106,8 @@ class LogDomain():
     '''
     음식 영양 성분 요청 
     '''
-    def get_food_nutrients(self, food_cat: str, food_name: str):
-        return self.__repository.get_food_nutrients(food_cat, food_name)
+    def get_food(self, food_cat: str, food_name: str):
+        return self.__repository.get_food(food_cat, food_name)
 
     '''
     유저 식단 섭취 로그 등록
@@ -118,10 +118,10 @@ class LogDomain():
     S3 Image Key, Inference Class_type, Class_type 상세 음식 이름만 전달
     '''
     def post_meal_log(self, userid: str, request):
-        image_key= request['image_key']
-        class_list= request['class_list']
-        food_list= request['food_list']
-        return self.__repository.post_meal_log(userid, image_key, class_list, food_list)
+        img_key= request['image_key']
+        class_f= request['class_list']
+        food= request['food_list']
+        return self.__repository.post_meal_log(userid, class_list=class_f, food_list=food, image_key=img_key)
 
     '''
     사용자 영양상태 로그 요청 - 특정 날짜 (식단 - 탄단지)
@@ -152,3 +152,11 @@ class LogDomain():
     '''
     def get_recomm_nutrsuppl(self, userid: str):
         return self.__repository.get_recomm_nutrsuppl(userid)
+
+    def get_barcode_data(self, bcode: str):
+        return self.__repository.get_barcode_data(bcode)
+    '''
+    바코드 식품 상품 로그
+    '''
+    def log_barcode_product(self, userid: str, bcode: str):
+        return self.__repository.log_barcode_product(userid, bcode)
